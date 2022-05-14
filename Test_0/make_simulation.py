@@ -28,6 +28,7 @@ def write_in_script(q_A, sigma, PatchRadius, PatchStrength, IsotropicAttrRange, 
 
     f.write("group                  Central type 1\n")
     f.write("group                  Patch type 2\n\n")
+    f.write("group                  CentralAndPatch type 1 2\n\n")
 
     f.write("neighbor               0.5 bin\n")
     f.write("neigh_modify           every 1 delay 1\n")
@@ -54,38 +55,28 @@ def write_in_script(q_A, sigma, PatchRadius, PatchStrength, IsotropicAttrRange, 
     # extract positions of central atom and 1sdt patch for each molecule
     f.write("compute                cCMCentral Central com/chunk cMol \n")
     f.write("compute                cCMPatch Patch com/chunk cMol \n")
-
-    #f.write("compute                cCMatom all chunk/spread/atom cmol c_cCMmol \n")
     # create two atom variables that return the position of the central atom of the molecule and the position of the 1st patch of the molecule
     f.write("compute                cCentral all chunk/spread/atom cMol c_cCMCentral[*] \n")
     f.write("compute                cPatch all chunk/spread/atom cMol c_cCMPatch[*] \n")
-
-    #f.write("compute                cCMatomx all chunk/spread/atom cmol c_cCMmol[1] \n")
-    #f.write("compute                cCMatomy all chunk/spread/atom cmol c_cCMmol[2] \n")
-    #f.write("variable               vCMx atom c_cCMatomx \n")
-    #f.write("variable               vCMy atom c_cCMatomy \n")
-    #f.write("variable               vCMax atom c_cCMmol[*][1] \n")
-    #f.write("variable               vCMay atom c_cCMmol[*][2] \n")
     # Move Central and Patch stored positions such that if patch and central are across boundaries, computed force is still correct
-    # Remember that vCentralx and vCentraly are only used for patch atoms and viceversa.
-    f.write("variable               vCentralx atom \"(abs(c_cCentral[1]-x)<{:f}) * c_cCentral[1] + (abs(c_cCentral[1]-x)>={:f}) * (c_cCentral[1]+(x>0)*{:f})\"  \n".format(0.5*Lx, 0.5*Lx, Lx))
-    f.write("variable               vCentraly atom \"(abs(c_cCentral[2]-y)<{:f}) * c_cCentral[2] + (abs(c_cCentral[2]-y)>={:f}) * (c_cCentral[2]+(y>0)*{:f})\"  \n".format(0.5*Ly, 0.5*Ly, Ly))
-    f.write("variable               vPatchx atom \"(abs(c_cPatch[1]-x)<{:f}) * c_cPatch[1] + (abs(c_cPatch[1]-x)>={:f}) * (c_cPatch[1]+(x>0)*{:f})\"  \n".format(0.5*Lx, 0.5*Lx, Lx))
-    f.write("variable               vPatchy atom \"(abs(c_cPatch[2]-y)<{:f}) * c_cPatch[2] + (abs(c_cPatch[2]-y)>={:f}) * (c_cPatch[2]+(y>0)*{:f})\"  \n".format(0.5*Ly, 0.5*Ly, Ly))
+    # Remember that vCentralx and vCentraly are only used for patch atoms and viceversa. Note that ((x>0)-(x<0)) = sign(x)
+    f.write("variable               vCentralx atom \"(abs(c_cCentral[1]-x)<0.5*lx) * c_cCentral[1] + (abs(c_cCentral[1]-x)>=0.5*lx) * (c_cCentral[1]+((x>0)-(x<0))*lx)\"  \n")#.format(0.5*Lx, 0.5*Lx, Lx))
+    f.write("variable               vCentraly atom \"(abs(c_cCentral[2]-y)<0.5*ly) * c_cCentral[2] + (abs(c_cCentral[2]-y)>=0.5*ly) * (c_cCentral[2]+((y>0)-(y<0))*ly)\"  \n")
+    f.write("variable               vPatchx   atom \"(abs(c_cPatch[1]  -x)<0.5*lx) * c_cPatch[1] +   (abs(c_cPatch[1]  -x)>=0.5*lx) * (c_cPatch[1]  +((x>0)-(x<0))*lx)\"  \n")
+    f.write("variable               vPatchy   atom \"(abs(c_cPatch[2]  -y)<0.5*ly) * c_cPatch[2] +   (abs(c_cPatch[2]  -y)>=0.5*ly) * (c_cPatch[2]  +((y>0)-(y<0))*ly)\"  \n")
 
     # compute forces
     f.write("# extForce = {:f} \n".format(extForce))
-    # here x and y are positions of the patch:q
-
+    # here x and y are positions of the patch
     f.write("variable               fxPatch   atom  {:f}*(y-v_vCentraly) \n".format(extForce / PatchRadialDistance))
     f.write("variable               fyPatch   atom -{:f}*(x-v_vCentralx) \n".format(extForce / PatchRadialDistance))
-    #f.write("variable               fxPatch   atom  {:f}*(y-c_cCMatomy) \n".format(extForce/PatchRadialDistance))
-    #f.write("variable               fyPatch   atom -{:f}*(x-c_cCMatomx) \n".format(extForce/PatchRadialDistance))
     # now x and y are positions of the central atom
     f.write("variable               fxCentral atom -{:f}*(v_vPatchy-y) \n".format(extForce/PatchRadialDistance))
     f.write("variable               fyCentral atom  {:f}*(v_vPatchx-x) \n\n".format(extForce/PatchRadialDistance))
-    #f.write("variable               fxCentral atom -{:f}*(y-v_vCMy) \n".format(extForce/PatchRadialDistance))
-    #f.write("variable               fyCentral atom  {:f}*(x-v_vCMx) \n\n".format(extForce/PatchRadialDistance))
+
+    # Check modulus of forces (debug)
+    #f.write("variable               fCentralModulus atom sqrt(v_fxCentral^2+v_fyCentral^2)\n")
+    #f.write("variable               fPatchModulus atom sqrt(v_fxPatch^2+v_fyPatch^2)\n\n")
 
     f.write("thermo                 {:d}\n".format(dumpevery))
     f.write("thermo_style           custom step temp press etotal epair \n")
@@ -98,10 +89,13 @@ def write_in_script(q_A, sigma, PatchRadius, PatchStrength, IsotropicAttrRange, 
     f.write("fix                    fEnforce2d all enforce2d\n")
 
     #f.write("fix                    prova all momentum 1 linear 1 1 0\n")
-    f.write("dump                   1 all custom {:d} {:s}/Traj_{:s}_{:d}.xyz id type mol x y z \n\n".format(dumpevery, ResultsFolder, filePattern, real))
-    f.write("dump                   101 all custom {:d} {:s}/cCMatom_{:s}_{:d}.dat id type mol v_vCentralx v_vCentraly v_vPatchx v_vPatchy v_fxPatch v_fyPatch v_fxCentral v_fyCentral  \n".format(dumpevery,ResultsFolder,filePattern,real))
+    f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}_{:d}.xyz id type mol x y z \n\n".format(dumpevery, ResultsFolder, filePattern, real))
+    f.write("dump                   101 CentralAndPatch custom {:d} {:s}/CompVar_{:s}_{:d}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] v_vCentralx v_vCentraly v_vPatchx v_vPatchy v_fxCentral v_fyCentral v_fxPatch v_fyPatch \n".format(dumpevery,ResultsFolder,filePattern,real))
+    #f.write("dump                   102 CentralAndPatch custom {:d} {:s}/CheckForce_{:s}_{:d}.dat id type mol v_fCentralModulus v_fPatchModulus \n".format(dumpevery,ResultsFolder,filePattern,real))
+
     f.write("dump_modify            1 sort id \n")
     f.write("dump_modify            101 sort id \n")
+    #f.write("dump_modify            102 sort id \n")
 
     f.write("run                    {:d}\n".format(1000))
 
@@ -137,9 +131,9 @@ if __name__ == "__main__":
 
     sigma = 1.0
     IsotropicAttrRange = 0.2
-    IsotropicAttrStrength = 10.0
+    IsotropicAttrStrength = 20.0
 
-    PatchRadius = 0.1
+    PatchRadius = 0.2
     PatchRadialDistance = 0.5
     PatchStrength = -IsotropicAttrStrength
 
@@ -227,4 +221,5 @@ if __name__ == "__main__":
     ## Write input script
     inputscriptfile = write_in_script(q_A, sigma, PatchRadius, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, configName, ResultsFolder, extForce, [system.Lx, system.Ly])
     print(inputscriptfile)
+    print(system.Lx)
     #clusterscriptfile = write_cluster_script(MPInum)
