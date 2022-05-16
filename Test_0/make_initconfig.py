@@ -4,14 +4,13 @@ import numpy as np
 class make_particles(object):
 
 
-    def __init__(self, sigma, PatchRadius, PatchRadialDistance, num_A, q_A, side, lattice_factor, real):
+    def __init__(self, sigma, PatchRadialDistance, num_A, q_A, side, lattice_factor, real):
 
         self.num_A = num_A
 
         self.q_A = q_A
 
         self.sigma = sigma
-        self.PatchRadius = PatchRadius
         self.PatchRadialDistance = PatchRadialDistance
 
         self.lattice_factor = lattice_factor
@@ -45,8 +44,8 @@ class make_particles(object):
             counter = 0
             for i in range(num_x):
                 for j in range(num_y):
-                    lattice_out[counter, 0] = lat_con * i - lat_con*num_x * 0.5
-                    lattice_out[counter, 1] = lat_con * j - lat_con*num_y * 0.5
+                    lattice_out[counter, 0] = lat_con * (i+0.5) - lat_con*num_x * 0.5
+                    lattice_out[counter, 1] = lat_con * (j+0.5) - lat_con*num_y * 0.5
                     lattice_out[counter, 2] = 0.0
                     counter += 1
             return lattice_out
@@ -64,7 +63,7 @@ class make_particles(object):
 
     def make_A(self):
 
-        particles_list = [1,2]+[3 for i in range(3,8+1)] # range(1,self.q_A+2)
+        particles_list = [1,2]+[3 for i in range(3,self.q_A+2)] # range(1,self.q_A+2)
         particle_types = len(particles_list)
         self.numTypes += len(np.unique(particles_list))
 
