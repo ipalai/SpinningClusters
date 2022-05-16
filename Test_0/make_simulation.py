@@ -13,9 +13,15 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     filename = "Input/Scripts/Input_{:s}_{:d}.in".format(filePattern, real)
     Temperature = 1.0
     LangevinDamping = 0.1
+    TimestepToTau0 = 0.01
 
 
     f = open(filename, "w")
+
+
+    #################################
+    # INITIALIZATION AND INTERACTIONS
+    #################################
 
     f.write("log                    {:s}/Log_{:s}_{:d}.dat \n\n".format(ResultsFolder, filePattern, real))
 
@@ -41,13 +47,16 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
 
     for id1 in range(2,numParticleTypes+1):
         for id2 in range(id1,numParticleTypes+1):
-            assert PatchStrength<0
-            f.write("pair_coeff             {:d} {:d}  {:.1f} {:.3f} {:.3f} \n".format(id1, id2, PatchStrength, 0.0, PatchRange))  # mirrored cosine squared if PatchStrength<0 (purely repulsive)
-            #f.write("pair_coeff             {:d} {:d}  {:.1f} {:.3f} {:.3f} wca \n".format(id1, id2, -PatchStrength, 2*PatchRange, 2*PatchRange))  # wca purely repulsive
+                f.write("pair_coeff             {:d} {:d}  {:.1f} {:.3f} {:.3f} \n".format(id1, id2, PatchStrength, 0.0, PatchRange))  # mirrored cosine squared if PatchStrength<0 (purely repulsive), or additional attraction if PatchStrength>0
 
 
-    f.write("\nvelocity               all create {:.3f} {:d} \n".format(Temperature,seed))
+    f.write("\nvelocity               all create {:.3f} {:d} \n\n".format(Temperature,seed))
     #f.write("\nvelocity               all create {:.3f} {:d} \n".format(0, seed))
+
+
+    ######################
+    # COMPUTE FORCE TO ADD
+    ######################
 
     # compute per-atom positions, if necessary shifted to account for pbc
     f.write("compute                cMol all chunk/atom molecule \n")
@@ -63,11 +72,11 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # compute forces
     f.write("# extForce = {:f} \n".format(extForce))
     # here x and y are positions of the patch
-    f.write("variable               fxPatch   atom  {:f}*(c_cyu-c_cCentral[2]) \n".format(extForce / PatchRadialDistance))
-    f.write("variable               fyPatch   atom -{:f}*(c_cxu-c_cCentral[1]) \n".format(extForce / PatchRadialDistance))
+    f.write("variable               fxPatch   atom -{:f}*(c_cyu-c_cCentral[2]) \n".format(extForce / PatchRadialDistance))
+    f.write("variable               fyPatch   atom  {:f}*(c_cxu-c_cCentral[1]) \n".format(extForce / PatchRadialDistance))
     # now x and y are positions of the central atom
-    f.write("variable               fxCentral atom -{:f}*(c_cPatch[2]-c_cyu) \n".format(extForce/PatchRadialDistance))
-    f.write("variable               fyCentral atom  {:f}*(c_cPatch[1]-c_cxu) \n\n".format(extForce/PatchRadialDistance))
+    f.write("variable               fxCentral atom  {:f}*(c_cPatch[2]-c_cyu) \n".format(extForce/PatchRadialDistance))
+    f.write("variable               fyCentral atom -{:f}*(c_cPatch[1]-c_cxu) \n\n".format(extForce/PatchRadialDistance))
 
     # # Move Central and Patch stored positions such that if patch and central are across boundaries, computed force is still correct
     # # Remember that vCentralx and vCentraly are only used for patch atoms and viceversa. Note that ((x>0)-(x<0)) = sign(x)
@@ -84,43 +93,93 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # f.write("variable               fxCentral atom -{:f}*(v_vPatchy-y) \n".format(extForce/PatchRadialDistance))
     # f.write("variable               fyCentral atom  {:f}*(v_vPatchx-x) \n\n".format(extForce/PatchRadialDistance))
 
-
-    # Check modulus of forces (debug)
-    f.write("variable               fCentralModulus atom sqrt(v_fxCentral^2+v_fyCentral^2)\n")
-    f.write("variable               fPatchModulus atom sqrt(v_fxPatch^2+v_fyPatch^2)\n\n")
-
-    # compute per-molecule angular momentum
-    f.write("compute                cAngMomMol all angmom/chunk cMol \n")
-    f.write("compute                cAngMomAtom all chunk/spread/atom cMol c_cAngMomMol[*] \n")
-
-    # compute total angular momentum
-    f.write("variable               vAngMomTot equal angmom(all,z) \n")
-    f.write("variable               vTorqueTot equal torque(all,z) \n")
-
-    #
-    f.write("thermo                 {:d}\n".format(dumpevery))
-    f.write("thermo_style           custom step temp press etotal epair v_vAngMomTot v_vTorqueTot \n")
-    f.write("thermo_modify          flush yes\n")
-    f.write("timestep               0.01\n\n")
+    ##################
+    # TIME INTEGRATION
+    ##################
 
     f.write("fix                    fLANG all langevin {:.3f} {:.3f} {:.3f} {:d} \n".format(Temperature, Temperature, LangevinDamping, seed))
     f.write("fix                    fRigidNVE all rigid/nve molecule\n")
     f.write("fix                    fEnforce2d all enforce2d\n")
 
-    #f.write("fix                    prova all momentum 1 linear 1 1 0\n")
-    f.write("dump                   1 all custom {:d} {:s}/Traj_{:s}_{:d}.xyz id type mol x y z \n\n".format(dumpevery, ResultsFolder, filePattern, real))
-    #f.write("dump                   101 CentralAndPatch custom {:d} {:s}/CompVar_{:s}_{:d}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] v_vCentralx v_vCentraly v_vPatchx v_vPatchy v_fxCentral v_fyCentral v_fxPatch v_fyPatch \n".format(dumpevery,ResultsFolder,filePattern,real))
-    f.write("dump                   101 CentralAndPatch custom {:d} {:s}/CompVar_{:s}_{:d}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] c_cxu c_cyu v_fxCentral v_fyCentral v_fxPatch v_fyPatch \n".format(dumpevery,ResultsFolder,filePattern,real))
-    f.write("dump                   102 CentralAndPatch custom {:d} {:s}/CheckForce_{:s}_{:d}.dat id type mol v_fCentralModulus v_fPatchModulus c_cAngMomAtom[3] \n".format(dumpevery,ResultsFolder,filePattern,real))
-
-    f.write("dump_modify            1 sort id flush yes \n")
-    f.write("dump_modify            101 sort id flush yes \n")
-    f.write("dump_modify            102 sort id \n")
-
     f.write("fix                    fTorqueCentral Central addforce v_fxCentral v_fyCentral 0 \n")
     f.write("fix                    fTorquePatch Patch addforce v_fxPatch v_fyPatch 0 \n\n")
 
+
+    ########################
+    # VARIABLES FOR ANALYSIS
+    ########################
+
+    # Check modulus of forces (debug)
+    f.write("variable               fCentralModulus atom sqrt(v_fxCentral^2+v_fyCentral^2)\n")
+    f.write("variable               fPatchModulus atom sqrt(v_fxPatch^2+v_fyPatch^2)\n\n")
+
+    # compute per-molecule angular momentum, torque, velocity and angular velocity
+    f.write("compute                cAngMomMol all angmom/chunk cMol \n")
+    f.write("compute                cTorqueMol all torque/chunk cMol \n")
+    f.write("compute                cOmegaMol all omega/chunk cMol \n")
+    f.write("compute                cVelCM Central vcm/chunk cMol \n\n")
+
+    # compute total angular momentum and torque, wrt centre of box
+    f.write("variable               vAngMomTot equal angmom(all,z) \n")
+    f.write("fix                    fAngMomTotAvgt all ave/time 10 100 {:d} v_vAngMomTot \n".format(dumpevery))
+    f.write("variable               vTorqueTot equal torque(all,z) \n")
+    f.write("fix                    fTorqueTotAvgt all ave/time 10 100 {:d} v_vTorqueTot \n".format(dumpevery))
+    # compute average angular momentum, torque and angular velocity, about centre of mass of each molecule
+    f.write("compute                cAngMomMolSpread all chunk/spread/atom cMol c_cAngMomMol[3] \n")
+    f.write("compute                cAngMomAvgm Central reduce ave c_cAngMomMolSpread \n")
+    f.write("fix                    fAngMomAvgmAvgt all ave/time 10 100 {:d} c_cAngMomAvgm \n".format(dumpevery))
+    f.write("compute                cTorqueMolSpread all chunk/spread/atom cMol c_cTorqueMol[3] \n")
+    f.write("compute                cTorqueAvgm Central reduce ave c_cTorqueMolSpread \n")
+    f.write("fix                    fTorqueAvgmAvgt all ave/time 10 100 {:d} c_cTorqueAvgm \n".format(dumpevery))
+    f.write("compute                cOmegaMolSpread all chunk/spread/atom cMol c_cOmegaMol[3] \n")
+    f.write("compute                cOmegaAvgm Central reduce ave c_cOmegaMolSpread \n")
+    f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(dumpevery))
+    f.write("variable               vTimestepsPerTurn equal 2*PI/{:f}/(f_fOmegaAvgmAvgt+1e-99) \n\n".format(TimestepToTau0))
+
+    # compute quantity that must be 0 if addforce is correct
+    f.write("variable               vAddforceCheck0 equal f_fTorqueCentral+f_fTorquePatch \n")
+    f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(dumpevery))
+
+    # compute clusters and angular momentum per cluster
+    # f.write("compute                cClusters Central cluster/atom {:f} \n".format(sigma+IsotropicAttrRange))
+    # f.write("compute                     Central chunk/atom cMol \n")
+    # f.write("compute                cClustChunk Central chunk/atom c_cClusters nchunk every compress yes")
+    # f.write("compute                cAngMomClust all angmom/chunk cClusterMol  ")
+
+
+    ########
+    # THERMO
+    ########
+
+    f.write("thermo                 {:d} \n".format(dumpevery))
+    f.write("thermo_style           custom step temp press etotal epair f_fAddforceCheck0 f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
+    f.write("thermo_modify          flush yes \n")
+    f.write("timestep               {:f} \n\n".format(TimestepToTau0))
+
+
+    ########
+    # DUMP
+    ########
+
+    #f.write("fix                    prova all momentum 1 linear 1 1 0\n")
+    f.write("dump                   1 all custom {:d} {:s}/Traj_{:s}_{:d}.xyz id type mol x y z vx vy vz \n\n".format(dumpevery, ResultsFolder, filePattern, real))
+    #f.write("dump                   101 CentralAndPatch custom {:d} {:s}/CompVar_{:s}_{:d}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] v_vCentralx v_vCentraly v_vPatchx v_vPatchy v_fxCentral v_fyCentral v_fxPatch v_fyPatch \n".format(dumpevery,ResultsFolder,filePattern,real))
+    f.write("dump                   101 CentralAndPatch custom {:d} {:s}/CheckTorque_{:s}_{:d}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] c_cxu c_cyu v_fxCentral v_fyCentral v_fxPatch v_fyPatch v_fCentralModulus v_fPatchModulus \n".format(dumpevery,ResultsFolder,filePattern,real))
+    #f.write("dump                   102 Central custom {:d} {:s}/RotationStatsMolecule_{:s}_{:d}.dat id type mol c_cAngMomAtom[3] \n".format(dumpevery,ResultsFolder,filePattern,real))
+    f.write("fix                    102 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}_{:d}.dat \n".format(dumpevery, ResultsFolder, filePattern, real))
+    #f.write("dump                   103 CentralAndPatch custom {:d} {:s}/RotationStatsCluster_{:s}_{:d}.dat id type mol v_fCentralModulus v_fPatchModulus c_cAngMomAtom[3] \n".format(dumpevery,ResultsFolder,filePattern,real))
+    f.write("dump_modify            1 sort id flush yes \n")
+    f.write("dump_modify            101 sort id \n\n")
+    #f.write("dump_modify            102 sort id \n")
+    #f.write("dump_modify            103 sort id \n")
+
+
+    ########
+    # RUN
+    ########
+
     f.write("run                    {:d}\n".format(RunSteps))
+
 
     f.close()
 
@@ -139,8 +198,8 @@ if __name__ == "__main__":
 
     # Simulation parameters
     num_A = 20
-    density_A = 0.1  # number of colloids per sigma^-2. A density of 0.25 corresponds to a packing fraction of 0.2
-    q_A = 8
+    density_A = 0.2  # number of colloids per sigma^-2. A density of 0.25 corresponds to a packing fraction of 0.2
+    q_A = 5
     sigma = 1.0
 
     IsotropicAttrRange = 0.2
@@ -148,7 +207,7 @@ if __name__ == "__main__":
 
     PatchRange = 0.1
     PatchRadialDistance = 0.5
-    PatchStrength = -0.5*IsotropicAttrStrength
+    PatchStrength = -IsotropicAttrStrength
 
     Temperature = 1
 
@@ -203,7 +262,7 @@ if __name__ == "__main__":
     system = make_particles(sigma, PatchRadialDistance, num_A, q_A, side, lattice_factor, real)
     system.make_A()
 
-    filePattern = "qA{:d}_dp{:.2f}_dens{:.3f}_nA{:d}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_eT{:.2f}_T{:.1f}".format(q_A,PatchRadialDistance,density_A,num_A,PatchRange,IsotropicAttrRange,PatchStrength,IsotropicAttrStrength,extTorque,Temperature)
+    filePattern = "qA{:d}_dp{:.2f}_dens{:.3f}_nA{:d}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_eT{:.1f}_T{:.1f}".format(q_A,PatchRadialDistance,density_A,num_A,PatchRange,IsotropicAttrRange,PatchStrength,IsotropicAttrStrength,extTorque,Temperature)
     ResultsFolder = "Results_qA{:d}_dp{:.2f}_dens{:.3f}".format(q_A,PatchRadialDistance,density_A)
 
     if not os.path.exists(ResultsFolder):
