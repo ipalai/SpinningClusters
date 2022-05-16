@@ -243,7 +243,8 @@ if __name__ == "__main__":
 
     dumpevery = 100
     RunSteps = 100000
-    MaxRunTime=48
+    MaxRunTime = 48
+    MPInum = 1 
 
     # Simulation parameters
     num_A = 20
