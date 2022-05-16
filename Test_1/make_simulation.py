@@ -237,10 +237,13 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
     return runfilename
 
 
+
+
 if __name__ == "__main__":
 
     dumpevery = 100
     RunSteps = 100000
+    MaxRunTime=48
 
     # Simulation parameters
     num_A = 20
@@ -294,7 +297,10 @@ if __name__ == "__main__":
                         help='Number of skipped time steps in dump file.')
     parser.add_argument('-extTorque', '--extTorque', '-eT', dest='extTorque', action='store', type=float,
                         default=extTorque, help='Number of skipped time steps in dump file.')
-
+    parser.add_argument('-MRT', '--MaxRunTime', dest='MaxRunTime', action='store', type=int, default=MaxRunTime,
+                        help="Maximum run time on cluster (integer, hours). Default {}.".format(MaxRunTime))
+    parser.add_argument('-MPI', '--MPInum', dest='MPInum', action='store', type=int, default=MPInum,
+                        help="Number of cores used for simulation. Default {}.".format(MPInum))
     args = parser.parse_args()
 
     num_A = args.num_A
@@ -309,6 +315,8 @@ if __name__ == "__main__":
     RunSteps = args.RunSteps
     dumpevery = args.dumpevery
     extTorque = args.extTorque
+    MaxRunTime = args.MaxRunTime
+    MPInum = args.MPInum
 
     extForce = extTorque / PatchRadialDistance
 
@@ -365,5 +373,9 @@ if __name__ == "__main__":
     inputscriptfile = write_in_script(sigma, system.numTypes, PatchRange, PatchStrength, IsotropicAttrRange,
                                       IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, configName,
                                       ResultsFolder, extForce)
+
+    # Create run file for cluster
+    runfilename = writeRunScript(filePattern, ResultsFolder, inputscriptfile, MaxRunTime, MPInum)
+
     print(inputscriptfile)
     # clusterscriptfile = write_cluster_script(MPInum)
