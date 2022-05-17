@@ -223,8 +223,8 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
     #	if.write("#SBATCH --partition=beta \n")
     f.write("#SBATCH --export=NONE \n")
     f.write("unset SLURM_EXPORT_ENV \n")
-    # if MPInum>1:
-    #	f.write("module load openmpi/3.1.3\n")
+    if MPInum>1:
+        f.write("module load openmpi/3.1.3\n")
     f.write("export OMP_NUM_THREADS=1 \n")
     if MPInum == 1:
         f.write(
