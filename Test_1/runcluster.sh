@@ -1,27 +1,28 @@
 #!/bin/bash -l
-module load python3/recommended
+#module load python3/recommended
 
 nA=200
 mpinum=1
+DENS=0.2
+RP=0.3
+EXTTORQUE=1.0
 
-for REAL in 311 312 313 314 315 #301 302 303 304 305 #1 2 3 #51 52 
+for REAL in 100 
 do
-for qA in 5
+for qA in 5 6 8
 do
-for EA in 5 #5 6 8 10 #6 7 8 #7 8 9 10 1
+for EA in 20 #5 6 8 10 #6 7 8 #7 8 9 10 1
 do
-for EP in 1.5 #0.5 1.0 1.5 2.0 2.5 3.0 #1 1.5 2.5 3  #2 3
+for EP in -20 -10 -5 5 10 20 #0.5 1.0 1.5 2.0 2.5 3.0 #1 1.5 2.5 3  #2 3
 do
-for RA in 2.0 #0.5 1.0 2.0 #1 1.5 2
+for RA in 0.05 0.2 0.5 1 #0.5 1.0 2.0 #1 1.5 2
 do
-python3 make_simulation.py -nA ${nA} -ea ${EA} -ep ${EP} -ra ${RA} --density_A_target 0.03 --real ${REAL} -qA ${qA} -qB ${qB} --mpinum ${mpinum} --runsteps 50000000 --ligand_range 0.2 --dumpstep 1000000
+python3 make_simulation.py -nA ${nA} -ea ${EA} -ep ${EP} -ra ${RA} -rp ${RP} -dens ${DENS} --real ${REAL} -qA ${qA} -eT ${EXTTORQUE} --MPInum ${mpinum} --RunSteps 50000000 --dumpevery 100000
 runscriptfile=$(ls -rt runscript_* | tail -n 1)
 echo $runscriptfile
-qsub $runscriptfile
+sbatch $runscriptfile
 mv $runscriptfile runscriptFiles/ 
 sleep 1
-done
-done
 done
 done
 done
