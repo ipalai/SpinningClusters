@@ -18,7 +18,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     f = open(filename, "w")
 
     #################################
-    # INITIALIZATION AND INTERACTIONS
+    # INITIALISATION AND INTERACTIONS
     #################################
 
     f.write("log                    {:s}/Log_{:s}.dat \n\n".format(ResultsFolder, filePattern))
