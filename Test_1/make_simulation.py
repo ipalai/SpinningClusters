@@ -211,9 +211,9 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
         f.write("#SBATCH --nodes=1 \n")
         f.write("#SBATCH --ntasks={:d} \n".format(MPInum))
         f.write("#SBATCH --mem-per-cpu={:d}M \n".format(int(np.ceil(200 / MPInum))))
-        f.write("#SBATCH --exclude beta233 \n")
     if MPInum == 1:
         f.write("#SBATCH --mem=200M \n")
+    f.write("#SBATCH --exclude beta233 \n")
     f.write("#SBATCH --time={:d}:00:00 \n".format(MaxRunTime))
     f.write("#SBATCH --mail-user=ivan.palaia@ist.ac.at \n")
     f.write("#SBATCH --mail-type=NONE \n")
@@ -241,10 +241,10 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
 
 if __name__ == "__main__":
 
-    dumpevery = 100
+    dumpevery = 10000
     RunSteps = 100000
     MaxRunTime = 48
-    MPInum = 1 
+    MPInum = 1
 
     # Simulation parameters
     num_A = 20
