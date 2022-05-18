@@ -213,7 +213,7 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
         f.write("#SBATCH --mem-per-cpu={:d}M \n".format(int(np.ceil(200 / MPInum))))
     if MPInum == 1:
         f.write("#SBATCH --mem=200M \n")
-    f.write("#SBATCH --exclude beta233 \n")
+    f.write("#SBATCH --exclude beta233,leonid63 \n")
     f.write("#SBATCH --time={:d}:00:00 \n".format(MaxRunTime))
     f.write("#SBATCH --mail-user=ivan.palaia@ist.ac.at \n")
     f.write("#SBATCH --mail-type=NONE \n")
