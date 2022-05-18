@@ -27,7 +27,7 @@
 #define NMAX 12000
 #define NMOLECULESMAX 2000
 #define NATOMTYPESMAX 14
-#define MOLECULETYPES 2
+#define MOLECULETYPES 1
 #define VALENCEMAX 6
 #define NINTERACTIONSMAX 36
 #define strlength 1500
@@ -136,27 +136,6 @@ int moleculetypefunction(int AtomTypeDummy)
         return -1; // error
 }
 
-
-long long int coalescence1function(int iCluster, int jCluster, int FlagCoalescenceBondCounter)
-{
-    int k, sum, dummy1, dummy2;
-    sum=0;
-    for(k=0; k<NumberOfInteractions; k++)
-    {
-        dummy1 = FreeLinkersNumberInCluster[iCluster][InteractionsMatrix[k][0]] * FreeLinkersNumberInCluster[jCluster][InteractionsMatrix[k][1]];
-        dummy2 = FreeLinkersNumberInCluster[iCluster][InteractionsMatrix[k][1]] * FreeLinkersNumberInCluster[jCluster][InteractionsMatrix[k][0]];
-        sum += dummy1+dummy2;
-        if(FlagCoalescenceBondCounter==1)
-            CoalescenceBondCounter[k] += dummy1+dummy2;
-    }
-    return sum;
-}
-
-
-float coalescence2function(int iCluster, int jCluster)
-{
-    return 1.0*coalescence1function(iCluster,jCluster,0)/4.0/sqrt(ClusterSize[iCluster][0]*ClusterSize[jCluster][0]);
-}
 
 
 /*
@@ -354,11 +333,11 @@ int main(int argc, char *argv[])
     timestep = strtol(argv[2], &p, 10);
     strcpy(FileNameOutput, argv[3]);
     //printf("%d", timestep);
-        // Get qA and qB
+        // Get qA
     pch = strpbrk (FileNameMovie, "q");
     while (pch != NULL)
     {
-        if(sscanf(pch, "qA%d_nB%*d_qB%d_%*s", &qA, &qB)==2)
+        if(sscanf(pch, "qA%d_%*s", &qA)==1)
             break;
         pch = strpbrk (pch+1,"q");
     }
@@ -371,13 +350,10 @@ int main(int argc, char *argv[])
         pch = strpbrk (pch+1,"_");
     }
 
-    SigmaLJ=2.0;
+    SigmaLJ=1.0;
     CutoffDistanceDist=ra+SigmaLJ;
     CutoffDistanceDistSq=SQR(CutoffDistanceDist);
-    printf("qA %d, qB %d, ra %f, CutoffDistanceDist %f\n", qA, qB, ra, CutoffDistanceDist);
-
-    CutoffDistanceBond=0.3;
-   	CutoffDistanceBondSq=SQR(CutoffDistanceBond);
+    printf("qA %d, ra %f, CutoffDistanceDist %f\n", qA, ra, CutoffDistanceDist);
 
 
 	// Compute InteractionsMatrix
