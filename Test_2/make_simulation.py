@@ -12,8 +12,8 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     seed = 100 + real
     filename = "Input/Scripts/Input_{:s}.in".format(filePattern)
     Temperature = 1.0
-    LangevinDamping = 0.1
-    TimestepToTau0 = 0.01
+    LangevinDamping = 0.08
+    TimestepToTau0 = 0.008
 
     f = open(filename, "w")
 
@@ -138,9 +138,10 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(dumpevery))
     f.write("variable               vTimestepsPerTurn equal 2*PI/{:f}/(f_fOmegaAvgmAvgt+1e-99) \n\n".format(TimestepToTau0))
 
-    # compute quantity that must be 0 if addforce is correct
-    f.write("variable               vAddforceCheck0 equal f_fTorqueCentral+f_fTorquePatch \n")
-    f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(dumpevery))
+    if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
+        # compute quantity that must be 0 if addforce is correct
+        f.write("variable               vAddforceCheck0 equal f_fTorqueCentral+f_fTorquePatch \n")
+        f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(dumpevery))
 
     # compute clusters and angular momentum per cluster
     # f.write("compute                cClusters Central cluster/atom {:f} \n".format(sigma+IsotropicAttrRange))
@@ -152,11 +153,11 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # THERMO
     ########
 
-    f.write("thermo                 {:d} \n".format(int(dumpevery/10)))
+    f.write("thermo                 {:d} \n".format(int(dumpevery)))
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         f.write("thermo_style           custom step temp press etotal epair f_fAddforceCheck0 f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
     else:
-        f.write("thermo_style           custom step temp press etotal epair $(0) f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
+        f.write("thermo_style           custom step temp press etotal epair f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
     f.write("thermo_modify          flush yes \n")
     f.write("timestep               {:f} \n\n".format(TimestepToTau0))
 
@@ -167,9 +168,9 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # f.write("fix                    prova all momentum 1 linear 1 1 0\n")
     f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
     f.write("dump                   1 all custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
-    f.write("dump_modify            1  sort id  flush yes\n")
+    f.write("dump_modify            1  sort id  flush yes  first yes\n")
     f.write("dump                   1Log all custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
-    f.write("dump_modify            1Log  sort id  every v_dumpts\n")
+    f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
 
     f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
             dumpevery, ResultsFolder, filePattern))
