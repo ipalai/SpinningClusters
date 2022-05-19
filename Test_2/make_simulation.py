@@ -335,16 +335,8 @@ if __name__ == "__main__":
     system = make_particles(sigma, PatchRadialDistance, num_A, q_A, side, lattice_factor, real)
     system.make_A()
 
-    filePattern = "qA{:d}_dp{:.2f}_dens{:.2f}_eT{:.2f}_nA{:d}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_T{:.1f}_{:d}".format(q_A,
-                                                                                                                  PatchRadialDistance,
-                                                                                                                  density_A,
-                                                                                                                  num_A,
-                                                                                                                  PatchRange,
-                                                                                                                  IsotropicAttrRange,
-                                                                                                                  PatchStrength,
-                                                                                                                  IsotropicAttrStrength,
-                                                                                                                  extTorque,
-                                                                                                                  Temperature, real)
+    filePattern = "qA{:d}_dp{:.2f}_dens{:.2f}_eT{:.2f}_nA{:d}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_T{:.1f}_{:d}".format(
+        q_A, PatchRadialDistance, density_A, extTorque, num_A, PatchRange, IsotropicAttrRange, PatchStrength, IsotropicAttrStrength, Temperature, real)
     ResultsFolder = "Results_qA{:d}_dp{:.2f}_dens{:.3f}_eT{:.2f}".format(q_A, PatchRadialDistance, density_A, extTorque)
 
     if not os.path.exists(ResultsFolder):
