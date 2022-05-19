@@ -167,9 +167,9 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
 
     # f.write("fix                    prova all momentum 1 linear 1 1 0\n")
     f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
-    f.write("dump                   1 all custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
+    f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
-    f.write("dump                   1Log all custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
+    f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
     f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
 
     f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
