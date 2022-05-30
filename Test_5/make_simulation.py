@@ -5,6 +5,7 @@ import argparse
 from make_initconfig import make_particles
 import os
 import numpy as np
+import math
 
 
 def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real,
@@ -220,7 +221,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
 
 
 
-def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum):
+def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum, num_A):
     runfilename = "runscript_{}.sh".format(filePattern)
     if MPInum == 1:
         JobName = "SerJob_{}".format(filePattern)
@@ -240,9 +241,9 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
         f.write("#SBATCH --ntasks-per-node={:d} \n".format(MPInum))
         f.write("#SBATCH --nodes=1 \n")
         f.write("#SBATCH --ntasks={:d} \n".format(MPInum))
-        f.write("#SBATCH --mem-per-cpu=2G \n")
+        f.write("#SBATCH --mem-per-cpu={:d}G \n".format(math.ceil(num_A/10000)))
     if MPInum == 1:
-        f.write("#SBATCH --mem=2G \n")
+        f.write("#SBATCH --mem={:d}G \n".format(math.ceil(num_A/10000)))
     #f.write("#SBATCH --exclude beta233,leonid63 \n")
     f.write("#SBATCH --time={:d}:00:00 \n".format(MaxRunTime))
     f.write("#SBATCH --mail-user=ivan.palaia@ist.ac.at \n")
@@ -404,7 +405,7 @@ if __name__ == "__main__":
                                       ResultsFolder, extForce, clusterevery, [system.Lx, system.Ly])
 
     # Create run file for cluster
-    runfilename = writeRunScript(filePattern, ResultsFolder, inputscriptfile, MaxRunTime, MPInum)
+    runfilename = writeRunScript(filePattern, ResultsFolder, inputscriptfile, MaxRunTime, MPInum, num_A)
 
     print(inputscriptfile)
     # clusterscriptfile = write_cluster_script(MPInum)
