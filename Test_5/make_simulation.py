@@ -241,7 +241,7 @@ def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum
         f.write("#SBATCH --ntasks-per-node={:d} \n".format(MPInum))
         f.write("#SBATCH --nodes=1 \n")
         f.write("#SBATCH --ntasks={:d} \n".format(MPInum))
-        f.write("#SBATCH --mem-per-cpu={:d}G \n".format(math.ceil(num_A/10000)))
+        f.write("#SBATCH --mem-per-cpu={:d}G \n".format(2))
     if MPInum == 1:
         f.write("#SBATCH --mem={:d}G \n".format(math.ceil(num_A/10000)))
     #f.write("#SBATCH --exclude beta233,leonid63 \n")
