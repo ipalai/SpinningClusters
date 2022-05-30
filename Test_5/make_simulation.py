@@ -97,7 +97,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     f.write("variable                vIx atom c_cImages[1] \n")
     f.write("variable                vIy atom c_cImages[2] \n")
     f.write("variable                vIz atom c_cImages[3] \n")
-    f.write("dump                   dClu all custom {:d} {:s}/ClusterPerAtom_{:s}.dat id c_cCluCentral c_cCluSpread v_vClu ix iy xu yu  \n".format(clusterevery, ResultsFolder, filePattern))
+    f.write("dump                   dClu all custom {:d} {:s}/ClusterPerAtom_{:s}.dat id c_cCluCentral c_cCluSpread v_vClu ix iy xu yu  \n".format(dumpevery, ResultsFolder, filePattern))
     f.write("dump_modify            dClu  sort id  flush yes  first yes \n")
     #f.write("unfix                  fdummy\n")
     #f.write("undump                  ddummy\n")
