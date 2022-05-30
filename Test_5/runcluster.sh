@@ -8,7 +8,7 @@ for DENS in 0.1 0.2
 do
 for REAL in 100 #101 102 103 104 105 106 107 #108 109 110 111 112 113 114 115
 do
-for EXTTORQUE in 0 0.1 0.3 1 3 5 10 15 30 
+for EXTTORQUE in 0 0.1 1 10 0.3 3 5 15 30 
 do
 for qA in 5
 do
