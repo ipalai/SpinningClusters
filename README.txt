@@ -12,3 +12,5 @@ Test_3 contains tests for oriented binding. I tried two strategies and a mix of 
 Test_4 contains simulation using the latter mechanism (on-the-go clustering). This allows to suppress folding, thus isolating the effect of pure rotation. However, clustering does not work properly: clusters across boundaries do not rotate. Maybe a bug in LAMMPS, or a problem with images of particles inside clusters.
 
 Test_5 contains simulations as before (rigid clustering on the go), but with fixed boundary conditions and walls. This avoids the problem with clusters across boundaries not moving. Clustering cutoff reduced to sigma+InteractionRange*2/3=0.10 (it was 0.15).
+
+Test_6 contains simulations where I isolate preformed clusters from simulations in Test_5, and allow for folding.
