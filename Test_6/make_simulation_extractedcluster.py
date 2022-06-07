@@ -282,7 +282,7 @@ if __name__ == "__main__":
     parser.add_argument('--Temperature', '-T', dest='Temperature', action='store', type=float, default=Temperature,
                         help='Temperature.')
     parser.add_argument('-runsteps', '--RunSteps', dest='RunSteps', action='store', type=int, default=RunSteps,
-                        help='Number of time steps.')
+                        help='Number of time steps. -1 to set automatically.')
     parser.add_argument('-dumpevery', '--dumpevery', dest='dumpevery', action='store', type=int, default=dumpevery,
                         help='Number of skipped time steps in dump file.')
     parser.add_argument('-extTorque', '--extTorque', '-eT', dest='extTorque', action='store', type=float,
@@ -314,6 +314,13 @@ if __name__ == "__main__":
 
     extForce = extTorque / PatchRadialDistance
 
+    if RunSteps==-1:
+        if extTorque<=3.5:
+            RunSteps=1000000
+        elif extTorque<=7.5:
+            RunSteps=500000
+        elif:
+            RunSteps=200000
 
     # Initial folder and pattern
     ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
