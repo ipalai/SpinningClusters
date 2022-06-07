@@ -8,12 +8,16 @@ import subprocess
 
 
 def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real,
-                    RunSteps, dumpevery, filePattern, configName, ResultsFolder, extForce):
+                    RunSteps, dumpevery, configfile, ConfigFolderPattern, ResultsFolder, ResultsFilePattern, extForce):
     seed = 100 + real
-    filename = "Input/Scripts/Input_{:s}.in".format(filePattern)
+    inputScriptFolder="Input/Scripts/InputCluFrom_{:s}".format(ConfigFolderPattern)
+    if not os.path.exists(inputScriptFolder):
+        os.makedirs(inputScriptFolder)
+    filename = "{:s}/Input_{:s}.in".format(inputScriptFolder,ResultsFilePattern)
     Temperature = 1.0
     LangevinDamping = 0.08
     TimestepToTau0 = 0.008
+    thermoevery=1000
 
     f = open(filename, "w")
 
@@ -21,13 +25,13 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # INITIALISATION AND INTERACTIONS
     #################################
 
-    f.write("log                    {:s}/Log_{:s}.dat \n\n".format(ResultsFolder, filePattern))
+    f.write("log                    {:s}/Log_{:s}.dat \n\n".format(ResultsFolder, ResultsFilePattern))
 
     f.write("units                  lj \n")
     f.write("dimension              2 \n")
     f.write("atom_style             full \n")
     f.write("boundary               p p p \n")
-    f.write("read_data              {:s} \n\n".format(configName))
+    f.write("read_data              {:s} \n\n".format(configfile))
 
     f.write("group                  Central type 1\n")
     f.write("group                  Patch type 2\n\n")
@@ -108,25 +112,25 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
 
     # compute total angular momentum and torque, wrt centre of box
     f.write("variable               vAngMomTot equal angmom(all,z) \n")
-    f.write("fix                    fAngMomTotAvgt all ave/time 10 100 {:d} v_vAngMomTot \n".format(dumpevery))
+    f.write("fix                    fAngMomTotAvgt all ave/time 10 100 {:d} v_vAngMomTot \n".format(thermoevery))
     f.write("variable               vTorqueTot equal torque(all,z) \n")
-    f.write("fix                    fTorqueTotAvgt all ave/time 10 100 {:d} v_vTorqueTot \n".format(dumpevery))
+    f.write("fix                    fTorqueTotAvgt all ave/time 10 100 {:d} v_vTorqueTot \n".format(thermoevery))
     # compute average angular momentum, torque and angular velocity, about centre of mass of each molecule
     f.write("compute                cAngMomMolSpread all chunk/spread/atom cMol c_cAngMomMol[3] \n")
     f.write("compute                cAngMomAvgm Central reduce ave c_cAngMomMolSpread \n")
-    f.write("fix                    fAngMomAvgmAvgt all ave/time 10 100 {:d} c_cAngMomAvgm \n".format(dumpevery))
+    f.write("fix                    fAngMomAvgmAvgt all ave/time 10 100 {:d} c_cAngMomAvgm \n".format(thermoevery))
     f.write("compute                cTorqueMolSpread all chunk/spread/atom cMol c_cTorqueMol[3] \n")
     f.write("compute                cTorqueAvgm Central reduce ave c_cTorqueMolSpread \n")
-    f.write("fix                    fTorqueAvgmAvgt all ave/time 10 100 {:d} c_cTorqueAvgm \n".format(dumpevery))
+    f.write("fix                    fTorqueAvgmAvgt all ave/time 10 100 {:d} c_cTorqueAvgm \n".format(thermoevery))
     f.write("compute                cOmegaMolSpread all chunk/spread/atom cMol c_cOmegaMol[3] \n")
     f.write("compute                cOmegaAvgm Central reduce ave c_cOmegaMolSpread \n")
-    f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(dumpevery))
+    f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(thermoevery))
     f.write("variable               vTimestepsPerTurn equal 2*PI/{:f}/(f_fOmegaAvgmAvgt+1e-99) \n\n".format(TimestepToTau0))
 
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         # compute quantity that must be 0 if addforce is correct
         f.write("variable               vAddforceCheck0 equal f_fTorqueCentral+f_fTorquePatch \n")
-        f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(dumpevery))
+        f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(thermoevery))
 
     # compute clusters and angular momentum per cluster
     # f.write("compute                cClusters Central cluster/atom {:f} \n".format(sigma+IsotropicAttrRange))
@@ -138,7 +142,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # THERMO
     ########
 
-    f.write("thermo                 {:d} \n".format(int(dumpevery)))
+    f.write("thermo                 {:d} \n".format(int(thermoevery)))
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         f.write("thermo_style           custom step temp press etotal epair f_fAddforceCheck0 f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
     else:
@@ -151,18 +155,19 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     ########
 
     # f.write("fix                    prova all momentum 1 linear 1 1 0\n")
-    f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
-    f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
+    f.write("variable        	dumpts equal (logfreq(1000,19,20)<=logfreq(1000,9,10))*logfreq(1000,19,20)+(logfreq(1000,19,20)>logfreq(1000,9,10))*logfreq(1000,9,10)\n")
+            # = min( logfreq(1000,19,20), logfreq(1000,9,10) )
+    f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
-    f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, filePattern))
+    f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
 
     f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
-            dumpevery, ResultsFolder, filePattern))
+            dumpevery, ResultsFolder, ResultsFilePattern))
 
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         f.write("dump                   3 CentralAndPatch custom {:d} {:s}/CheckTorque_{:s}.dat id type mol x y c_cCentral[1] c_cCentral[2] c_cPatch[1] c_cPatch[2] c_cxu c_cyu v_fxCentral v_fyCentral v_fxPatch v_fyPatch v_fCentralModulus v_fPatchModulus \n".format(
-                dumpevery, ResultsFolder, filePattern))
+                dumpevery, ResultsFolder, ResultsFilePattern))
         f.write("dump_modify            3 sort id \n\n")
 
 
@@ -179,14 +184,18 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
 
 
 
-def writeRunScript(filePattern, Resultsfolder, inputfilename, MaxRunTime, MPInum):
-    runfilename = "runscript_{}.sh".format(filePattern)
+def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, inputfilename, MaxRunTime, MPInum):
+    runscriptFolder = "runscriptFiles/runscriptCluFrom_{:s}/".format(ConfigFolderPattern)
+    if not os.path.exists(runscriptFolder):
+        os.makedirs(runscriptFolder)
+    runfilename = "{:s}runscript_{}.sh".format(runscriptFolder,ResultsFilePattern)
+
     if MPInum == 1:
-        JobName = "SerJob_{}".format(filePattern)
+        JobName = "SerJob_{}".format(ResultsFilePattern)
     else:
         assert MPInum <= 32, "ERROR: Too many cores requested."
-        JobName = "ParJob_{}".format(filePattern)
-    OutFileName = "{:s}/Out_{}.dat".format(Resultsfolder, filePattern)
+        JobName = "ParJob_{}".format(ResultsFilePattern)
+    OutFileName = "{:s}/Out_{}.dat".format(ResultsFolder, ResultsFilePattern)
 
     f = open(runfilename, "w")
     f.write("""#!/bin/bash
@@ -234,6 +243,7 @@ if __name__ == "__main__":
     RunSteps = 1000000
     MaxRunTime = 48
     MPInum = 1
+    submitflag='no'
 
     # Simulation parameters
     q_A = 5
@@ -282,6 +292,8 @@ if __name__ == "__main__":
                         help="Number of cores used for simulation. Default {}.".format(MPInum))
     parser.add_argument('--configfile', dest='configfile', action='store', type=str, default='',
                         help="Initial configuration file, containing cluster extracted from previous simulation.")
+    parser.add_argument('--submitflag', action='store', type=str, default='no',
+                        help="'sbatch' to submit job to clusters after generating scripts; 'run' to run directly on local core; 'no' to generate scripts only.")
 
     args = parser.parse_args()
 
@@ -297,28 +309,48 @@ if __name__ == "__main__":
     MaxRunTime = args.MaxRunTime
     MPInum = args.MPInum
     configfile = args.configfile
+    submitflag = args.submitflag
 
     extForce = extTorque / PatchRadialDistance
 
-    # Initial configuration
-    filePattern = subprocess.check_output(
-        " echo {:s} | sed 's/.*\/Config_.*\/Config_//' | sed 's/.dat//'".format(configfile), shell=True)
-    filePattern = filePattern.decode("utf-8")[:-1]
-    folderPattern = subprocess.check_output(" echo {:s} | sed 's/.*ConfigurationsToRun\/Config_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
-    folderPattern = folderPattern.decode("utf-8")[:-1]
-    ResultsFolder = "Results_{:s}".format(folderPattern)
+    # Initial folder and pattern
+    ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
+    ConfigFolderPattern = ConfigFolderPattern.decode("utf-8")[:-1]  #e.g.: qA5_dp0.50_dens0.20_eT0.00_nA100000_rp0.15_ra0.15_ep-10.0_ea20.0_ce100_T1.0_100_ts300000
+    ConfigFilePattern = subprocess.check_output(" echo {:s} | sed 's/.*\/ConfigCluFrom_.*\/Config_//' | sed 's/.dat//'".format(configfile), shell=True)
+    ConfigFilePattern = ConfigFilePattern.decode("utf-8")[:-1]  # e.g.: C3     # this is also the ResultsFolder pattern
+
+    # Result pattern and folder
+    ResultsFolder = "ResultsCluFrom_{:s}".format(ConfigFolderPattern)
+    """r1 = re.compile('[_]')
+    r2 = re.compile(r'(([-+]?\d+\.\d+)|([-+]?\d+))')
+    for s in r1.split(ConfigFilePattern):
+        if s.startswith('qA'):
+            qA = int(r2.split(s)[1])
+        if s.startswith('C')
+            C = int(r2.split(s)[1]) """
+    ResultsFilePattern = "{:s}_eT{:.2f}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_T{:.1f}_{:d}".format(
+        ConfigFilePattern, extTorque, PatchRange, IsotropicAttrRange, PatchStrength, IsotropicAttrStrength, Temperature, real)
 
     if not os.path.exists(ResultsFolder):
         os.makedirs(ResultsFolder)
 
 
     # Write input script
-    inputscriptfile = write_in_script(sigma, 3, PatchRange, PatchStrength, IsotropicAttrRange,
-                                      IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, configfile,
-                                      ResultsFolder, extForce)
+    inputscriptfile = write_in_script(sigma, 3, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real, RunSteps, dumpevery,
+                                      configfile, ConfigFolderPattern, ResultsFolder,ResultsFilePattern, extForce)
 
     # Create run file for cluster
-    runfilename = writeRunScript(filePattern, ResultsFolder, inputscriptfile, MaxRunTime, MPInum)
+    runfilename = writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, inputscriptfile, MaxRunTime, MPInum)
 
     print(inputscriptfile)
-    # clusterscriptfile = write_cluster_script(MPInum)
+
+
+    # submit job
+    print(submitflag)
+    if submitflag in ['yes','Yes','YES']:
+        submissionoutput = subprocess.check_output("sbatch {:s} ".format(runfilename), shell=True)
+        print(submissionoutput)
+    elif submitflag in ['run', 'Run', 'RUN']:
+        submissionoutput = subprocess.check_output("lmp_serial -in {:s} ".format(inputscriptfile), shell=True)
+    else:
+        print("No job was submitted.")
