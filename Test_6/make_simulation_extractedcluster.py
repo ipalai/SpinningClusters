@@ -315,12 +315,14 @@ if __name__ == "__main__":
     extForce = extTorque / PatchRadialDistance
 
     if RunSteps==-1:
-        if extTorque<=3.5:
-            RunSteps=1000000
+        if extTorque<=1.5:
+            RunSteps=3000000
+        elif extTorque<=3.5:
+            RunSteps=1500000
         elif extTorque<=7.5:
-            RunSteps=500000
+            RunSteps=1000000
         else:
-            RunSteps=300000
+            RunSteps= 500000
 
     # Initial folder and pattern
     ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
