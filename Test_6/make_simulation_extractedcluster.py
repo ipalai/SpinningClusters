@@ -155,8 +155,9 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     ########
 
     # f.write("fix                    prova all momentum 1 linear 1 1 0\n")
-    f.write("variable        	dumpts equal (logfreq(1000,19,20)<=logfreq(1000,9,10))*logfreq(1000,19,20)+(logfreq(1000,19,20)>logfreq(1000,9,10))*logfreq(1000,9,10)\n")
-            # = min( logfreq(1000,19,20), logfreq(1000,9,10) )
+    #f.write("variable        	dumpts equal (logfreq(1000,19,20)<=logfreq(1000,9,10))*logfreq(1000,19,20)+(logfreq(1000,19,20)>logfreq(1000,9,10))*logfreq(1000,9,10)\n")     # = min( logfreq(1000,19,20), logfreq(1000,9,10) )
+    f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
+
     f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
     f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
@@ -240,7 +241,7 @@ def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, input
 if __name__ == "__main__":
 
     dumpevery = 100000
-    RunSteps = 1000000
+    RunSteps = 500000
     MaxRunTime = 48
     MPInum = 1
     submitflag='no'
@@ -312,6 +313,7 @@ if __name__ == "__main__":
     submitflag = args.submitflag
 
     extForce = extTorque / PatchRadialDistance
+
 
     # Initial folder and pattern
     ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
