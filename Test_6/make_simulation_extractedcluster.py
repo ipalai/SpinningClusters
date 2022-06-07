@@ -320,7 +320,7 @@ if __name__ == "__main__":
         elif extTorque<=7.5:
             RunSteps=500000
         else:
-            RunSteps=200000
+            RunSteps=300000
 
     # Initial folder and pattern
     ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
