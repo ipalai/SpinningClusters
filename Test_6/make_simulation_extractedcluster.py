@@ -319,7 +319,7 @@ if __name__ == "__main__":
             RunSteps=1000000
         elif extTorque<=7.5:
             RunSteps=500000
-        elif:
+        else:
             RunSteps=200000
 
     # Initial folder and pattern
