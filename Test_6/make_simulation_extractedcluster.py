@@ -355,7 +355,6 @@ if __name__ == "__main__":
 
 
     # submit job
-    print(submitflag)
     if submitflag in ['sbatch','yes','Yes','YES','cluster']:
         submissionoutput = subprocess.check_output("sbatch {:s} ".format(runfilename), shell=True)
         print(submissionoutput.decode("utf-8"))
