@@ -349,7 +349,7 @@ if __name__ == "__main__":
     print(submitflag)
     if submitflag in ['sbatch','yes','Yes','YES','cluster']:
         submissionoutput = subprocess.check_output("sbatch {:s} ".format(runfilename), shell=True)
-        print(submissionoutput)
+        print(submissionoutput.decode("utf-8"))
     elif submitflag in ['run', 'Run', 'RUN']:
         submissionoutput = subprocess.check_output("lmp_serial -in {:s} ".format(inputscriptfile), shell=True)
     else:
