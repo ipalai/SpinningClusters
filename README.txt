@@ -15,6 +15,9 @@ Test_4 contains simulation using the latter mechanism (on-the-go clustering). Th
 
 * Test_6 contains simulations where I isolate preformed clusters from simulations in Test_5, and allow for folding.
 
+* Test_7 contains simulations where I isolate a big preformed cluster from Test_2 and perform mechanical tests on it.
+
+
 
 ------------------------------
 * starred folders are named Test, but they actually contain production run, used in the data analysis.

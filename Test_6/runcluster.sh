@@ -18,7 +18,7 @@ do
 
 	echo $configfile
 
-	for REAL in 200 #101 102 103 104 105 106 107 #108 109 110 111 112 113 114 115
+	for REAL in 100 #101 102 103 104 105 106 107 #108 109 110 111 112 113 114 115
 	do
 
 		filepattern=$(echo $configfile | sed 's/.*Configurations\/Config_//' | sed  's/\/Config.*//' | sed "s/_ts[0-9]*//")
