@@ -185,6 +185,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # RUN
     ########
 
+    f.write("restart                1000000 RestartA_{:s} RestartB_{:s}\n")
     f.write("run                    {:d}\n".format(RunSteps))
 
     f.close()
