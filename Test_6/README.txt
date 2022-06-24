@@ -1,3 +1,6 @@
 Workflow: 
 Clusters are extracted through the Jupyter Notebook extractcluster.ipynb. This takes a simulation result from Test_5 (where clusters are rigid bodies and no folding could happen), goes to a specific timestep, runs the clustering algorithm, and produces one read_data file for every cluster, that LAMMPS can use as input for a new simulation. Clusters too close to the boundaries of the box are discarded (Test_5 doesn't have periodic boundary conditions) and clusters smaller than a certain size (e.g. 10) are also discarded. The center of mass of each cluster is shifted to the center of the box.
 After that, the make_simulation_extractedcluster.py routine writes LAMMPS input scripts for simulations where clusters are not rigid bodies and rotation of single colloids is re-enabled (as in Test_2). If needed, python submits the job to the cluster.  
+
+File names:
+Files of all types (Scripts, Configurations, Results and ClustersStatistics) are organised as follows. The name of the folder they are in, after "CluFrom" is the name of the original Test_2 simulation from which they are extracted. The name of the file contains the number of cluster (as extracted from the original Test_2 simulation) followed by the parameters at which the new simulation is run (e.g. different external torque eT). 

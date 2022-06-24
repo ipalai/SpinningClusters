@@ -19,6 +19,12 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     TimestepToTau0 = 0.008
     thermoevery = 1000
 
+    RunDeform=100000
+    RunEquilibrate=100000
+    RunStatistics=300000
+    DeformScaleFactor=1.04
+    DeformIterations=20
+
     f = open(filename, "w")
 
     #################################
@@ -82,18 +88,6 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
         f.write("variable               fxCentral atom  {:f}*(c_cPatch[2]-c_cyu) \n".format(extForce / PatchRadialDistance))
         f.write("variable               fyCentral atom -{:f}*(c_cPatch[1]-c_cxu) \n\n".format(extForce / PatchRadialDistance))
 
-    ##################
-    # TIME INTEGRATION
-    ##################
-
-    f.write("fix                    fLANG all langevin {:.3f} {:.3f} {:.3f} {:d} \n".format(Temperature, Temperature,
-                                                                                            LangevinDamping, seed))
-    f.write("fix                    fRigidNVE all rigid/nve molecule\n")
-    f.write("fix                    fEnforce2d all enforce2d\n")
-
-    if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
-        f.write("fix                    fTorqueCentral Central addforce v_fxCentral v_fyCentral 0 \n")
-        f.write("fix                    fTorquePatch Patch addforce v_fxPatch v_fyPatch 0 \n\n")
 
     ########################
     # VARIABLES FOR ANALYSIS
@@ -138,6 +132,9 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # f.write("compute                cClustChunk Central chunk/atom c_cClusters nchunk every compress yes")
     # f.write("compute                cAngMomClust all angmom/chunk cClusterMol  ")
 
+    # Elastic properties
+    f.write("compute                cStress all stress/atom NULL\n\n")
+
     ########
     # THERMO
     ########
@@ -154,14 +151,13 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # DUMP
     ########
 
-    # f.write("fix                    prova all momentum 1 linear 1 1 0\n")
-    #f.write("variable        	dumpts equal (logfreq(1000,19,20)<=logfreq(1000,9,10))*logfreq(1000,19,20)+(logfreq(1000,19,20)>logfreq(1000,9,10))*logfreq(1000,9,10)\n")     # = min( logfreq(1000,19,20), logfreq(1000,9,10) )
-    f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
+    # A logarithmic dump makes no sense for this set of simulations
+    #f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
 
     f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
-    f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
-    f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
+    #f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
+    #f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
 
     f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
             dumpevery, ResultsFolder, ResultsFilePattern))
@@ -171,12 +167,30 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
                 dumpevery, ResultsFolder, ResultsFilePattern))
         f.write("dump_modify            3 sort id \n\n")
 
+    f.write("fix                    4 all ave/time 1 {:d} {:d} c_cStress[*] mode vector file {:s}/Stress_{:s}.dat \n".format(
+        RunStatistics, RunDeform+RunEquilibrate+RunStatistics, ResultsFolder, ResultsFilePattern))
 
-    ########
-    # RUN
-    ########
+    ##################
+    # TIME INTEGRATION AND RUNS
+    ##################
 
-    f.write("run                    {:d}\n".format(RunSteps))
+    f.write("fix                    fLANG all langevin {:.3f} {:.3f} {:.3f} {:d} \n".format(Temperature, Temperature,
+                                                                                            LangevinDamping, seed))
+    f.write("fix                    fRigidNVE all rigid/nve molecule\n")
+    f.write("fix                    fEnforce2d all enforce2d\n")
+
+    if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
+        f.write("fix                    fTorqueCentral Central addforce v_fxCentral v_fyCentral 0 \n")
+        f.write("fix                    fTorquePatch Patch addforce v_fxPatch v_fyPatch 0 \n\n")
+
+    DeformScaleFactors=np.concatenate((DeformScaleFactor*np.ones(DeformIterations), -DeformScaleFactor*np.ones(DeformIterations))
+    for i in range(0,2*DeformIterations):
+        if DeformDirection in ['x', 'y']:
+            f.write("fix                    fDeform all deform 1 {:s} scale {:.3f} remap x\n".format(DeformDirection, DeformScaleFactors[i]))
+        f.write("run                    {:d}\n".format(RunDeform))
+        f.write("unfix                  fDeform\n")
+        f.write("run                    {:d}\n".format(RunEquilibrate+RunStatistics))
+
 
     f.close()
 
@@ -241,7 +255,7 @@ def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, input
 if __name__ == "__main__":
 
     dumpevery = 100000
-    RunSteps = 500000
+    RunSteps = 5000000
     MaxRunTime = 48
     MPInum = 1
     submitflag='no'
@@ -282,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument('--Temperature', '-T', dest='Temperature', action='store', type=float, default=Temperature,
                         help='Temperature.')
     parser.add_argument('-runsteps', '--RunSteps', dest='RunSteps', action='store', type=int, default=RunSteps,
-                        help='Number of time steps. -1 to set automatically.')
+                        help='Number of time steps.')
     parser.add_argument('-dumpevery', '--dumpevery', dest='dumpevery', action='store', type=int, default=dumpevery,
                         help='Number of skipped time steps in dump file.')
     parser.add_argument('-extTorque', '--extTorque', '-eT', dest='extTorque', action='store', type=float,
@@ -314,15 +328,6 @@ if __name__ == "__main__":
 
     extForce = extTorque / PatchRadialDistance
 
-    if RunSteps==-1:
-        if extTorque<=1.5:
-            RunSteps=5000000
-        elif extTorque<=3.5:
-            RunSteps=3000000
-        elif extTorque<=7.5:
-            RunSteps=2000000
-        else:
-            RunSteps=1000000
 
     # Initial folder and pattern
     ConfigFolderPattern = subprocess.check_output(" echo {:s} | sed 's/.*Configurations\/ConfigCluFrom_//' | sed  's/\/Config.*//' ".format(configfile), shell=True)
