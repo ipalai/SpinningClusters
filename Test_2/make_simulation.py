@@ -185,7 +185,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # RUN
     ########
 
-    f.write("restart                1000000 RestartA_{:s} RestartB_{:s}\n")
+    f.write("restart                1000000 {:s}/RestartA_{:s} {:s}/RestartB_{:s}\n".format(ResultsFolder,filePattern,ResultsFolder,filePattern))
     f.write("run                    {:d}\n".format(RunSteps))
 
     f.close()
