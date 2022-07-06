@@ -17,7 +17,7 @@ Test_4 contains simulation using the latter mechanism (on-the-go clustering). Th
 
 * Test_7 contains simulations where I isolate a big preformed cluster from Test_2 and perform mechanical tests on it. Project aborted.
 
-* Test_8 contains simulations where I perform mechanical tests on the percolated structures formed in Test_2 at low activity. 
+* Test_8 contains simulations where I perform mechanical tests on the percolated structures formed in Test_2 at low activity.
 
 
 ------------------------------

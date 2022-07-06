@@ -8,7 +8,9 @@ import subprocess
 
 
 def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real,
-                    RunSteps, dumpevery, configfile, ConfigFolderPattern, ResultsFolder, ResultsFilePattern, extForce):
+                    dumpevery, configfile, ConfigFolderPattern, ResultsFolder, ResultsFilePattern, extForce,
+                    DeformDirection, DeformDelta, DeformIterations, RunDeform, RunEquilibrate, RunStatistics):
+
     seed = 100 + real
     inputScriptFolder="Input/Scripts/InputCluFrom_{:s}".format(ConfigFolderPattern)
     if not os.path.exists(inputScriptFolder):
@@ -17,13 +19,8 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     Temperature = 1.0
     LangevinDamping = 0.08
     TimestepToTau0 = 0.008
-    thermoevery = 10000
+    thermoevery = 1000
 
-    RunDeform=100000
-    RunEquilibrate=100000
-    RunStatistics=300000
-    DeformScaleFactor=1.025
-    DeformIterations=28
 
     f = open(filename, "w")
 
@@ -167,12 +164,10 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     #             dumpevery, ResultsFolder, ResultsFilePattern))
     #     f.write("dump_modify            3 sort id \n\n")
 
-    f.write("fix                    4 all ave/time 1 {:d} {:d} c_cStressAtom[*] mode vector file {:s}/StressAtom_{:s}.dat \n".format(
-        RunStatistics, RunDeform+RunEquilibrate+RunStatistics, ResultsFolder, ResultsFilePattern))
+    #f.write("fix                    4 all ave/time 1 {:d} {:d} c_cStressAtom[*] mode vector file {:s}/StressAtom_{:s}.dat \n".format(
+    #    RunStatistics, RunDeform+RunEquilibrate+RunStatistics, ResultsFolder, ResultsFilePattern))
     f.write("fix                    5 all ave/time 1 {:d} {:d} c_thermo_press[*] mode scalar file {:s}/StressTensor_{:s}.dat \n".format(
         thermoevery, thermoevery, ResultsFolder, ResultsFilePattern))
-
-    f.write("fix                    5 all ave/time 1 {:d} {:d} c_thermo_pressure[*] mode scalar file {:s}")
 
     ##################
     # TIME INTEGRATION AND RUNS
@@ -187,18 +182,17 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
         f.write("fix                    fTorqueCentral Central addforce v_fxCentral v_fyCentral 0 \n")
         f.write("fix                    fTorquePatch Patch addforce v_fxPatch v_fyPatch 0 \n\n")
 
-    DeformScaleFactors=np.concatenate((DeformScaleFactor*np.ones(DeformIterations), -DeformScaleFactor*np.ones(DeformIterations)))
+    DeformDeltas=np.concatenate((DeformDelta*np.ones(DeformIterations), -DeformDelta*np.ones(DeformIterations)))
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
-            f.write("fix                    fDeform all deform 1 {:s} scale {:.3f} remap x\n".format(DeformDirection, DeformScaleFactors[i]))
+            f.write("fix                    fDeform all deform 1 {:s} scale {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
         elif DeformDirection in ['xANDy']:
-            f.write("fix                    fDeform all deform 1 x scale {:.3f} remap x\n".format(DeformScaleFactors[i]))
-            f.write("fix                    fDeform all deform 1 y scale {:.3f} remap x\n".format(DeformScaleFactors[i]))
+            f.write("fix                    fDeform all deform 1 x delta {:.3f} remap x\n".format(DeformDeltas[i]))
+            f.write("fix                    fDeform all deform 1 y delta {:.3f} remap x\n".format(DeformDeltas[i]))
         elif DeformDirection in ['xy']:
-            DeformScaleFactors = np.concatenate((np.ones(DeformIterations), -np.ones(DeformIterations)))
-            f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformScaleFactors[i]*2 ))
+            f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
         else:
-            print("Invalid DeformDirection.\n"))
+            print("Invalid DeformDirection.\n")
         f.write("run                    {:d}\n".format(RunDeform))
         f.write("unfix                  fDeform\n")
         f.write("run                    {:d}\n".format(RunEquilibrate+RunStatistics))
@@ -267,10 +261,13 @@ def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, input
 if __name__ == "__main__":
 
     dumpevery = 100000
-    RunSteps = 5000000
+    RunDeform = 100000
+    RunEquilibrate = 100000
+    RunStatistics = 300000
+
     MaxRunTime = 48
     MPInum = 1
-    submitflag='no'
+    submitflag = 'no'
 
     # Simulation parameters
     q_A = 5
@@ -281,13 +278,16 @@ if __name__ == "__main__":
 
     PatchRange = 0.15
     PatchRadialDistance = 0.5
-    PatchStrength = -IsotropicAttrStrength
+    PatchStrength = -10.0
 
     Temperature = 1
 
-    extTorque = 10.0
+    extTorque = 0
 
     real = 0
+
+    DeformIterations= 40
+    DeformDelta = 2
 
     parser = argparse.ArgumentParser(description="Script for spinning, aggregating colloids.")
 
@@ -307,8 +307,6 @@ if __name__ == "__main__":
                         help='Number of realisation (statistics), sets the seed.')
     parser.add_argument('--Temperature', '-T', dest='Temperature', action='store', type=float, default=Temperature,
                         help='Temperature.')
-    parser.add_argument('-runsteps', '--RunSteps', dest='RunSteps', action='store', type=int, default=RunSteps,
-                        help='Number of time steps.')
     parser.add_argument('-dumpevery', '--dumpevery', dest='dumpevery', action='store', type=int, default=dumpevery,
                         help='Number of skipped time steps in dump file.')
     parser.add_argument('-extTorque', '--extTorque', '-eT', dest='extTorque', action='store', type=float,
@@ -322,6 +320,20 @@ if __name__ == "__main__":
     parser.add_argument('--submitflag', action='store', type=str, default='no',
                         help="'sbatch' to submit job to clusters after generating scripts; 'run' to run directly on local core; 'no' to generate scripts only.")
 
+    parser.add_argument('--DeformDirection', action='store', type=str, default='xANDy',
+                        help="'x' or 'y' to stretch/compress just in one direction; 'xANDy' to stretch/compress uniformly in both directions; 'xy' to shear.")
+    parser.add_argument('--DeformDelta', action='store', type=float, default=DeformDelta,
+                        help="In units of sigma. For 'x', 'y' or 'xANDy', increase in box length(s) for each deform iteration; for 'xy', increase in tilt at each iteration.")
+    parser.add_argument('--DeformIterations', action='store', type=int, default=DeformIterations,
+                        help="Number of deform iterations.")
+
+    parser.add_argument('--RunDeform', action='store', type=int, default=RunDeform,
+                        help="Duration of each deformation run.")
+    parser.add_argument('--RunEquilibrate', action='store', type=int, default=RunEquilibrate,
+                        help="Duration of each equilibration run (after deformation and before statistics).")
+    parser.add_argument('--RunStatistics', action='store', type=int, default=RunStatistics,
+                        help="Duration of each production run to collect statistics (after deformation and equilibration).")
+
     args = parser.parse_args()
 
     PatchRange = args.PatchRange
@@ -330,13 +342,18 @@ if __name__ == "__main__":
     IsotropicAttrRange = args.IsotropicAttrRange
     IsotropicAttrStrength = args.IsotropicAttrStrength
     real = args.real
-    RunSteps = args.RunSteps
     dumpevery = args.dumpevery
     extTorque = args.extTorque
     MaxRunTime = args.MaxRunTime
     MPInum = args.MPInum
     configfile = args.configfile
     submitflag = args.submitflag
+    DeformDirection = args.DeformDirection
+    DeformDelta = args.DeformDelta
+    DeformIterations = args.DeformIterations
+    RunDeform = args.RunDeform
+    RunEquilibrate = args.RunEquilibrate
+    RunStatistics = args.RunStatistics
 
     extForce = extTorque / PatchRadialDistance
 
@@ -356,16 +373,16 @@ if __name__ == "__main__":
             qA = int(r2.split(s)[1])
         if s.startswith('C')
             C = int(r2.split(s)[1]) """
-    ResultsFilePattern = "{:s}_eT{:.2f}_rp{:.2f}_ra{:.2f}_ep{:.1f}_ea{:.1f}_T{:.1f}_{:d}".format(
-        ConfigFilePattern, extTorque, PatchRange, IsotropicAttrRange, PatchStrength, IsotropicAttrStrength, Temperature, real)
+    ResultsFilePattern = "{:s}_eT{:.2f}_{:d}".format(ConfigFilePattern, extTorque, real)
 
     if not os.path.exists(ResultsFolder):
         os.makedirs(ResultsFolder)
 
 
     # Write input script
-    inputscriptfile = write_in_script(sigma, 3, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real, RunSteps, dumpevery,
-                                      configfile, ConfigFolderPattern, ResultsFolder,ResultsFilePattern, extForce)
+    inputscriptfile = write_in_script(sigma, 3, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real, dumpevery,
+                                      configfile, ConfigFolderPattern, ResultsFolder,ResultsFilePattern, extForce,
+                                      DeformDirection, DeformDelta, DeformIterations, RunDeform, RunEquilibrate, RunStatistics )
 
     # Create run file for cluster
     runfilename = writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, inputscriptfile, MaxRunTime, MPInum)
@@ -378,6 +395,6 @@ if __name__ == "__main__":
         submissionoutput = subprocess.check_output("sbatch {:s} ".format(runfilename), shell=True)
         print(submissionoutput.decode("utf-8"))
     elif submitflag in ['run', 'Run', 'RUN']:
-        submissionoutput = subprocess.check_output("lmp_serial -in {:s} ".format(inputscriptfile), shell=True)
+        submissionoutput = subprocess.check_output("~/my_src/lammps/lammps-29Sep2021/src/lmp_serial -in {:s} ".format(inputscriptfile), shell=True)
     else:
         print("No job was submitted.")
