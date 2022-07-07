@@ -185,10 +185,10 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     DeformDeltas=np.concatenate((DeformDelta*np.ones(DeformIterations), -DeformDelta*np.ones(DeformIterations)))
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
-            f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
+            f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} {:.3f} remap x\n".format(DeformDirection, -DeformDeltas[i], DeformDeltas[i]))
         elif DeformDirection in ['xANDy']:
-            f.write("fix                    fDeform all deform 1 x delta {:.3f} remap x\n".format(DeformDeltas[i]))
-            f.write("fix                    fDeform all deform 1 y delta {:.3f} remap x\n".format(DeformDeltas[i]))
+            f.write("fix                    fDeform all deform 1 x delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
+            f.write("fix                    fDeform all deform 1 y delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
         elif DeformDirection in ['xy']:
             f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
         else:
