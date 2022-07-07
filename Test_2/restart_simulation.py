@@ -24,7 +24,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     #################################
 
     f.write("log                    {:s}/Log_{:s}.dat \n\n".format(ResultsFolder, filePattern))
-    f.write("read_restart           {:s}\n".format(ResultsFolder,RestartFilePath))
+    f.write("read_restart           {:s}\n".format(RestartFilePath))
     f.write("units                  lj \n")
     f.write("dimension              2 \n")
     f.write("atom_style             full \n")
