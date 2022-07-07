@@ -10,7 +10,7 @@ import numpy as np
 
 
 def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real,
-                    RunSteps, dumpevery, filePattern, RestartFileName, ResultsFolder, extForce):
+                    RunSteps, dumpevery, filePattern, RestartFilePath, ResultsFolder, extForce):
     seed = 100 + real
     filename = "Input/Scripts/Input_{:s}.in".format(filePattern)
     Temperature = 1.0
@@ -24,7 +24,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     #################################
 
     f.write("log                    {:s}/Log_{:s}.dat \n\n".format(ResultsFolder, filePattern))
-    f.write("read_restart           {:s}/{:s}\n".format(ResultsFolder,RestartFileName))
+    f.write("read_restart           {:s}\n".format(ResultsFolder,RestartFilePath))
     f.write("units                  lj \n")
     f.write("dimension              2 \n")
     f.write("atom_style             full \n")
@@ -354,7 +354,7 @@ if __name__ == "__main__":
             filelist=listi
             nexti = i+1
             break
-    LatestRestartFile = max(filelist, key=os.path.getctime)
+    LatestRestartFilePath = max(filelist, key=os.path.getctime)
     filePattern = "{:d}_{:s}".format(nexti,OriginalFilePattern)
 
     '''
@@ -384,7 +384,7 @@ if __name__ == "__main__":
 
     # Write input script
     inputscriptfile = write_in_script(sigma, system.numTypes, PatchRange, PatchStrength, IsotropicAttrRange,
-                                      IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, LatestRestartFile,
+                                      IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, LatestRestartFilePath,
                                       ResultsFolder, extForce)
 
     # Create run file for cluster
