@@ -186,21 +186,14 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
             f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} {:.3f} remap x\n".format(DeformDirection, -DeformDeltas[i], DeformDeltas[i]))
-            f.write("run                    {:d}\n".format(RunDeform))
-            f.write("unfix                  fDeform\n")
         elif DeformDirection in ['xAy']:
-            f.write("fix                    fDeformx all deform 1 x delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
-            f.write("fix                    fDeformy all deform 1 y delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
-            f.write("run                    {:d}\n".format(RunDeform))
-            f.write("unfix                  fDeformx\n")
-            f.write("unfix                  fDeformy\n")
+            f.write("fix                    fDeform all deform 1 x delta {:.3f} {:.3f} y delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i],-DeformDeltas[i], DeformDeltas[i]))
         elif DeformDirection in ['xy']:
             f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
-            f.write("run                    {:d}\n".format(RunDeform))
-            f.write("unfix                  fDeform\n")
         else:
             print("Invalid DeformDirection.\n")
-
+        f.write("run                    {:d}\n".format(RunDeform))
+        f.write("unfix                  fDeform\n")
         f.write("run                    {:d}\n".format(RunEquilibrate+RunStatistics))
 
 
