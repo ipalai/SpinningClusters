@@ -4,7 +4,9 @@
 import argparse
 from make_initconfig import make_particles
 import os
+import glob
 import numpy as np
+
 
 
 def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, IsotropicAttrRange, IsotropicAttrStrength, real,
@@ -346,14 +348,14 @@ if __name__ == "__main__":
     filelist = glob.glob("{:s}/Restart*_{:s}".format(ResultsFolder,OriginalFilePattern))
     assert len(filelist)!=0, "ERROR: No restart file."
     nexti=2
-    for i in np.arange(20,0,-1):
+    for i in np.arange(20,1,-1):
         listi = [x for x in filelist if any(s in x for s in ['RestartA_{:d}_'.format(i), 'RestartB_{:d}_'.format(i)]) ]
         if len(listi)!=0:
             filelist=listi
             nexti = i+1
             break
     LatestRestartFile = max(filelist, key=os.path.getctime)
-    filePattern = "{:d}_{:s}".format(OriginalFilePattern)
+    filePattern = "{:d}_{:s}".format(nexti,OriginalFilePattern)
 
     '''
     configName = "Input/Configurations/Config_{:s}.dat".format(filePattern, real)
