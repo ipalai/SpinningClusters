@@ -346,7 +346,7 @@ if __name__ == "__main__":
 
     # Check that restart file exists and determine new filePattern
     filelist = glob.glob("{:s}/Restart*_{:s}".format(ResultsFolder,OriginalFilePattern))
-    assert len(filelist)!=0, "ERROR: No restart file."
+    assert len(filelist)!=0, "ERROR: No restart file for {:s}".format(OriginalFilePattern)
     nexti=2
     for i in np.arange(20,1,-1):
         listi = [x for x in filelist if any(s in x for s in ['RestartA_{:d}_'.format(i), 'RestartB_{:d}_'.format(i)]) ]
