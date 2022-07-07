@@ -10,8 +10,8 @@ RP=${RA}
 DENS=0.40
 ETCLU=0.00
 
-#for configfile in Input/Configurations/ConfigCluFrom_qA${qA}_dp0.50_dens${DENS}_eT${ETCLU}_nA10000_rp0.15_ra0.15_ep-10.0_ea20.0_T1.0_*/Config_C*.dat
-for configfile in Input/Configurations/ConfigCluFrom_*/Config_C*.dat
+for configfile in Input/Configurations/ConfigCluFrom_qA${qA}_dp0.50_dens${DENS}_eT${ETCLU}_nA10000_rp0.15_ra0.15_ep-10.0_ea20.0_T1.0_*/Config_C*.dat
+#for configfile in Input/Configurations/ConfigCluFrom_*/Config_C*.dat
 do
 
 	if [[ ! -e "$configfile" ]]
@@ -31,7 +31,7 @@ do
    			continue
 		fi
 
-		for EXTTORQUE in 0 #1 3 10 #0.1 0.3 1 3 5 10 15
+		for EXTTORQUE in 0
 		do
 			python3 make_simulation_extractedcluster.py -ea ${EA} -ep ${EP} -ra ${RA} -rp ${RP} --real ${REAL} -eT ${EXTTORQUE} --MPInum ${mpinum} --MaxRunTime 240 --submitflag sbatch --configfile ${configfile}
 			sleep 5
