@@ -186,7 +186,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
             f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} {:.3f} remap x\n".format(DeformDirection, -DeformDeltas[i], DeformDeltas[i]))
-        elif DeformDirection in ['xANDy']:
+        elif DeformDirection in ['xAy']:
             f.write("fix                    fDeform all deform 1 x delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
             f.write("fix                    fDeform all deform 1 y delta {:.3f} {:.3f} remap x\n".format(-DeformDeltas[i], DeformDeltas[i]))
         elif DeformDirection in ['xy']:
@@ -320,10 +320,10 @@ if __name__ == "__main__":
     parser.add_argument('--submitflag', action='store', type=str, default='no',
                         help="'sbatch' to submit job to clusters after generating scripts; 'run' to run directly on local core; 'no' to generate scripts only.")
 
-    parser.add_argument('--DeformDirection', action='store', type=str, default='xANDy',
-                        help="'x' or 'y' to stretch/compress just in one direction; 'xANDy' to stretch/compress uniformly in both directions; 'xy' to shear.")
+    parser.add_argument('--DeformDirection', action='store', type=str, default='xAy',
+                        help="'x' or 'y' to stretch/compress just in one direction; 'xAy' to stretch/compress uniformly in both directions; 'xy' to shear.")
     parser.add_argument('--DeformDelta', action='store', type=float, default=DeformDelta,
-                        help="In units of sigma. For 'x', 'y' or 'xANDy', increase in box length(s) for each deform iteration; for 'xy', increase in tilt at each iteration.")
+                        help="In units of sigma. For 'x', 'y' or 'xAy', increase in box length(s) for each deform iteration; for 'xy', increase in tilt at each iteration.")
     parser.add_argument('--DeformIterations', action='store', type=int, default=DeformIterations,
                         help="Number of deform iterations.")
 
@@ -373,7 +373,7 @@ if __name__ == "__main__":
             qA = int(r2.split(s)[1])
         if s.startswith('C')
             C = int(r2.split(s)[1]) """
-    ResultsFilePattern = "{:s}_eT{:.2f}_dd{:.1f}_di{:d}_{:d}".format(ConfigFilePattern, extTorque, DeformDelta, DeformIterations, real)
+    ResultsFilePattern = "{:s}_eT{:.2f}_d{:s}_dd{:.1f}_di{:d}_{:d}".format(ConfigFilePattern, extTorque, DeformDirection, DeformDelta, DeformIterations, real)
 
     if not os.path.exists(ResultsFolder):
         os.makedirs(ResultsFolder)
