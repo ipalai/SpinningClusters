@@ -185,7 +185,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     DeformDeltas=np.concatenate((DeformDelta*np.ones(DeformIterations), -DeformDelta*np.ones(DeformIterations)))
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
-            f.write("fix                    fDeform all deform 1 {:s} scale {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
+            f.write("fix                    fDeform all deform 1 {:s} delta {:.3f} remap x\n".format(DeformDirection, DeformDeltas[i]))
         elif DeformDirection in ['xANDy']:
             f.write("fix                    fDeform all deform 1 x delta {:.3f} remap x\n".format(DeformDeltas[i]))
             f.write("fix                    fDeform all deform 1 y delta {:.3f} remap x\n".format(DeformDeltas[i]))
@@ -286,7 +286,7 @@ if __name__ == "__main__":
 
     real = 0
 
-    DeformIterations= 40
+    DeformIterations= 20
     DeformDelta = 2
 
     parser = argparse.ArgumentParser(description="Script for spinning, aggregating colloids.")
@@ -373,7 +373,7 @@ if __name__ == "__main__":
             qA = int(r2.split(s)[1])
         if s.startswith('C')
             C = int(r2.split(s)[1]) """
-    ResultsFilePattern = "{:s}_eT{:.2f}_{:d}".format(ConfigFilePattern, extTorque, real)
+    ResultsFilePattern = "{:s}_eT{:.2f}_dd{:.1f}_di{:d}_{:d}".format(ConfigFilePattern, extTorque, DeformDelta, DeformIterations, real)
 
     if not os.path.exists(ResultsFolder):
         os.makedirs(ResultsFolder)
