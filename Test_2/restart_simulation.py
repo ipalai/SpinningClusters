@@ -354,7 +354,7 @@ if __name__ == "__main__":
             filelist=listi
             nexti = i+1
             break
-    LatestRestartFilePath = max(filelist, key=os.path.getctime)
+    OldestRestartFilePath = min(filelist, key=os.path.getctime)
     filePattern = "{:d}_{:s}".format(nexti,OriginalFilePattern)
 
     '''
@@ -384,7 +384,7 @@ if __name__ == "__main__":
 
     # Write input script
     inputscriptfile = write_in_script(sigma, system.numTypes, PatchRange, PatchStrength, IsotropicAttrRange,
-                                      IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, LatestRestartFilePath,
+                                      IsotropicAttrStrength, real, RunSteps, dumpevery, filePattern, OldestRestartFilePath,
                                       ResultsFolder, extForce)
 
     # Create run file for cluster
