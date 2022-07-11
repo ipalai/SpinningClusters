@@ -286,7 +286,7 @@ if __name__ == "__main__":
     real = 0
 
     DeformIterations= 20
-    DeformDelta = 2
+    DeformDelta = 1
 
     parser = argparse.ArgumentParser(description="Script for spinning, aggregating colloids.")
 
