@@ -7,10 +7,10 @@ EP=-10
 RA=0.15
 RP=${RA}
 
-DENS=0.25
+DENS=0.40
 
 
-for configfile in Input/Configurations/ConfigCluFrom_qA5_dp0.50_dens${DENS}_eT*_nA10000_rp0.15_ra0.15_ep-10.0_ea20.0_T1.0_202_*/Config_C*.dat
+for configfile in Input/Configurations/ConfigCluFrom_qA5_dp0.50_dens${DENS}_eT*_nA10000_rp0.15_ra0.15_ep-10.0_ea20.0_T1.0_*ts10000000/Config_C*.dat
 #for configfile in Input/Configurations/ConfigCluFrom_*/Config_C*.dat
 do
 
@@ -32,7 +32,7 @@ do
 		fi
 
 		EXTTORQUE=0
-		for DEFDIR in xy #x y xAy
+		for DEFDIR in xy #xy #x y xAy
 		do
 			python3 make_simulation_extractedcluster.py -ea ${EA} -ep ${EP} -ra ${RA} -rp ${RP} --real ${REAL} -eT ${EXTTORQUE} --MPInum ${mpinum} --MaxRunTime 240 --submitflag sbatch --configfile ${configfile} --DeformDirection ${DEFDIR}
 			sleep 5
