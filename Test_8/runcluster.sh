@@ -7,7 +7,7 @@ EP=-10
 RA=0.15
 RP=${RA}
 
-DENS=0.40
+DENS=0.25
 
 
 for configfile in Input/Configurations/ConfigCluFrom_qA5_dp0.50_dens${DENS}_eT*_nA10000_rp0.15_ra0.15_ep-10.0_ea20.0_T1.0_*ts10000000/Config_C*.dat
@@ -21,7 +21,7 @@ do
 
 	echo $configfile
 
-	for REAL in 110 #101 102 103 104 105 106 107 #108 109 110 111 112 113 114 115
+	for REAL in 111 #101 102 103 104 105 106 107 #108 109 110 111 112 113 114 115
 	do
 
 		filepattern=$(echo $configfile | sed 's/.*Configurations\/Config_//' | sed  's/\/Config.*//' | sed "s/_ts[0-9]*//")
