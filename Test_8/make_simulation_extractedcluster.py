@@ -182,6 +182,8 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
         f.write("fix                    fTorqueCentral Central addforce v_fxCentral v_fyCentral 0 \n")
         f.write("fix                    fTorquePatch Patch addforce v_fxPatch v_fyPatch 0 \n\n")
 
+    f.write("restart                500000 {:s}/RestartA_{:s} {:s}/RestartB_{:s}\n".format(ResultsFolder,ResultsFilePattern,ResultsFolder,ResultsFilePattern))
+
     DeformDeltas=np.concatenate((DeformDelta*np.ones(DeformIterations), -DeformDelta*np.ones(DeformIterations)))
     for i in range(0,2*DeformIterations):
         if DeformDirection in ['x', 'y']:
