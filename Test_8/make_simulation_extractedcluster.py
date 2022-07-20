@@ -152,7 +152,8 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
 
-    f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
+    if np.isclose(extForce, 0, atol=1e-6, rtol=0) == False:
+        f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
             dumpevery, ResultsFolder, ResultsFilePattern))
 
     # if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
