@@ -37,7 +37,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     f.write("read_data              {:s} \n\n".format(configfile))
 
     f.write("group                  Central type 1\n")
-    f.write("group                  Patch type 2\n\n")
+    f.write("group                  Patch type 2\n")
     f.write("group                  CentralAndPatch type 1 2\n\n")
 
     f.write("neighbor               0.5 bin\n")
@@ -63,19 +63,19 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     # COMPUTE FORCE TO ADD
     ######################
 
-    # compute per-atom positions, if necessary shifted to account for pbc
-    f.write("compute                cMol all chunk/atom molecule \n")
-    # extract positions of central atom and 1sdt patch for each molecule
-    f.write("compute                cCMCentral Central com/chunk cMol \n")
-    f.write("compute                cCMPatch Patch com/chunk cMol \n")
-    # create two atom variables that return the position of the central atom of the molecule and the position of the 1st patch of the molecule
-    f.write("compute                cCentral all chunk/spread/atom cMol c_cCMCentral[*] \n")
-    f.write("compute                cPatch all chunk/spread/atom cMol c_cCMPatch[*] \n")
-    # compute unwrapped coordinates (because centre of mass is unwrapped in LAMMPS)
-    f.write("compute                cxu all property/atom xu \n")
-    f.write("compute                cyu all property/atom yu \n")
-
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
+        # compute per-atom positions, if necessary shifted to account for pbc
+        f.write("compute                cMol all chunk/atom molecule \n")
+        # extract positions of central atom and 1sdt patch for each molecule
+        f.write("compute                cCMCentral Central com/chunk cMol \n")
+        f.write("compute                cCMPatch Patch com/chunk cMol \n")
+        # create two atom variables that return the position of the central atom of the molecule and the position of the 1st patch of the molecule
+        f.write("compute                cCentral all chunk/spread/atom cMol c_cCMCentral[*] \n")
+        f.write("compute                cPatch all chunk/spread/atom cMol c_cCMPatch[*] \n")
+        # compute unwrapped coordinates (because centre of mass is unwrapped in LAMMPS)
+        f.write("compute                cxu all property/atom xu \n")
+        f.write("compute                cyu all property/atom yu \n")
+
         # compute forces
         f.write("# extForce = {:f} \n".format(extForce))
         # here x and y are positions of the patch
@@ -95,30 +95,29 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
         f.write("variable               fCentralModulus atom sqrt(v_fxCentral^2+v_fyCentral^2)\n")
         f.write("variable               fPatchModulus atom sqrt(v_fxPatch^2+v_fyPatch^2)\n\n")
 
-    # compute per-molecule angular momentum, torque, velocity and angular velocity
-    f.write("compute                cAngMomMol all angmom/chunk cMol \n")
-    f.write("compute                cTorqueMol all torque/chunk cMol \n")
-    f.write("compute                cOmegaMol all omega/chunk cMol \n")
-    f.write("compute                cVelCM Central vcm/chunk cMol \n\n")
+        # compute per-molecule angular momentum, torque, velocity and angular velocity
+        f.write("compute                cAngMomMol all angmom/chunk cMol \n")
+        f.write("compute                cTorqueMol all torque/chunk cMol \n")
+        f.write("compute                cOmegaMol all omega/chunk cMol \n")
+        f.write("compute                cVelCM Central vcm/chunk cMol \n\n")
 
-    # compute total angular momentum and torque, wrt centre of box
-    f.write("variable               vAngMomTot equal angmom(all,z) \n")
-    f.write("fix                    fAngMomTotAvgt all ave/time 10 100 {:d} v_vAngMomTot \n".format(thermoevery))
-    f.write("variable               vTorqueTot equal torque(all,z) \n")
-    f.write("fix                    fTorqueTotAvgt all ave/time 10 100 {:d} v_vTorqueTot \n".format(thermoevery))
-    # compute average angular momentum, torque and angular velocity, about centre of mass of each molecule
-    f.write("compute                cAngMomMolSpread all chunk/spread/atom cMol c_cAngMomMol[3] \n")
-    f.write("compute                cAngMomAvgm Central reduce ave c_cAngMomMolSpread \n")
-    f.write("fix                    fAngMomAvgmAvgt all ave/time 10 100 {:d} c_cAngMomAvgm \n".format(thermoevery))
-    f.write("compute                cTorqueMolSpread all chunk/spread/atom cMol c_cTorqueMol[3] \n")
-    f.write("compute                cTorqueAvgm Central reduce ave c_cTorqueMolSpread \n")
-    f.write("fix                    fTorqueAvgmAvgt all ave/time 10 100 {:d} c_cTorqueAvgm \n".format(thermoevery))
-    f.write("compute                cOmegaMolSpread all chunk/spread/atom cMol c_cOmegaMol[3] \n")
-    f.write("compute                cOmegaAvgm Central reduce ave c_cOmegaMolSpread \n")
-    f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(thermoevery))
-    f.write("variable               vTimestepsPerTurn equal 2*PI/{:f}/(f_fOmegaAvgmAvgt+1e-99) \n\n".format(TimestepToTau0))
+        # compute total angular momentum and torque, wrt centre of box
+        f.write("variable               vAngMomTot equal angmom(all,z) \n")
+        f.write("fix                    fAngMomTotAvgt all ave/time 10 100 {:d} v_vAngMomTot \n".format(thermoevery))
+        f.write("variable               vTorqueTot equal torque(all,z) \n")
+        f.write("fix                    fTorqueTotAvgt all ave/time 10 100 {:d} v_vTorqueTot \n".format(thermoevery))
+        # compute average angular momentum, torque and angular velocity, about centre of mass of each molecule
+        f.write("compute                cAngMomMolSpread all chunk/spread/atom cMol c_cAngMomMol[3] \n")
+        f.write("compute                cAngMomAvgm Central reduce ave c_cAngMomMolSpread \n")
+        f.write("fix                    fAngMomAvgmAvgt all ave/time 10 100 {:d} c_cAngMomAvgm \n".format(thermoevery))
+        f.write("compute                cTorqueMolSpread all chunk/spread/atom cMol c_cTorqueMol[3] \n")
+        f.write("compute                cTorqueAvgm Central reduce ave c_cTorqueMolSpread \n")
+        f.write("fix                    fTorqueAvgmAvgt all ave/time 10 100 {:d} c_cTorqueAvgm \n".format(thermoevery))
+        f.write("compute                cOmegaMolSpread all chunk/spread/atom cMol c_cOmegaMol[3] \n")
+        f.write("compute                cOmegaAvgm Central reduce ave c_cOmegaMolSpread \n")
+        f.write("fix                    fOmegaAvgmAvgt all ave/time 10 100 {:d} c_cOmegaAvgm \n".format(thermoevery))
+        f.write("variable               vTimestepsPerTurn equal 2*PI/{:f}/(f_fOmegaAvgmAvgt+1e-99) \n\n".format(TimestepToTau0))
 
-    if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         # compute quantity that must be 0 if addforce is correct
         f.write("variable               vAddforceCheck0 equal f_fTorqueCentral+f_fTorquePatch \n")
         f.write("fix                    fAddforceCheck0 all ave/time 10 100 {:d} v_vAddforceCheck0 \n\n".format(thermoevery))
@@ -140,7 +139,7 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     if np.isclose(extForce, 0, atol=1e-6, rtol=0)==False:
         f.write("thermo_style           custom step temp press etotal epair f_fAddforceCheck0 f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
     else:
-        f.write("thermo_style           custom step temp press etotal epair f_fTorqueTotAvgt f_fAngMomTotAvgt f_fTorqueAvgmAvgt f_fAngMomAvgmAvgt f_fOmegaAvgmAvgt v_vTimestepsPerTurn \n")
+        f.write("thermo_style           custom step temp press etotal epair  \n")
     f.write("thermo_modify          flush yes \n")
     f.write("timestep               {:f} \n\n".format(TimestepToTau0))
 
@@ -149,12 +148,9 @@ def write_in_script(sigma, numParticleTypes, PatchRange, PatchStrength, Isotropi
     ########
 
     # A logarithmic dump makes no sense for this set of simulations
-    #f.write("variable        	dumpts equal logfreq(1000,9,10)\n")
 
     f.write("dump                   1 CentralAndPatch custom {:d} {:s}/Traj_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
     f.write("dump_modify            1  sort id  flush yes  first yes\n")
-    #f.write("dump                   1Log CentralAndPatch custom {:d} {:s}/TrajLog_{:s}.xyz id type mol x y z vx vy vz \n".format(dumpevery, ResultsFolder, ResultsFilePattern))
-    #f.write("dump_modify            1Log  sort id  every v_dumpts  first yes\n")
 
     f.write("fix                    2 all ave/time 1 1 {:d} c_cCMCentral[1] c_cCMCentral[2] c_cVelCM[1] c_cVelCM[2] c_cTorqueMol[3] c_cAngMomMol[3] c_cOmegaMol[3] mode vector file {:s}/RotationStatsMolecule_{:s}.dat \n".format(
             dumpevery, ResultsFolder, ResultsFilePattern))
@@ -213,10 +209,10 @@ def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, input
     runfilename = "{:s}runscript_{}.sh".format(runscriptFolder,ResultsFilePattern)
 
     if MPInum == 1:
-        JobName = "SerJob_{}".format(ResultsFilePattern)
+        JobName = "SerJob_{}__{}".format(ResultsFolder,ResultsFilePattern)
     else:
         assert MPInum <= 32, "ERROR: Too many cores requested."
-        JobName = "ParJob_{}".format(ResultsFilePattern)
+        JobName = "ParJob_{}__{}".format(ResultsFolder,ResultsFilePattern)
     OutFileName = "{:s}/Out_{}.dat".format(ResultsFolder, ResultsFilePattern)
 
     f = open(runfilename, "w")
