@@ -250,7 +250,7 @@ def writeRunScript(ConfigFolderPattern, ResultsFolder, ResultsFilePattern, input
         f.write(
             "srun --cpu_bind=verbose  ~/my_src/lammps/lammps-29Sep2021/src/lmp_serial -in {} ".format(inputfilename))
     if MPInum > 1:
-        f.write("srun --cpu_bind=verbose  ~/my_src/lammps/lammps-29Sep2021/src/lmp_mpi -in {} ".format(inputfilename))
+        f.write("srun --cpu_bind=verbose --mpi=pmi2 ~/my_src/lammps/lammps-29Sep2021/src/lmp_mpi -in {} ".format(inputfilename))
 
     f.close()
 
